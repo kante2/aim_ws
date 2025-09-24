@@ -1,0 +1,10 @@
+<launch>
+  <!-- 절대경로로 CSV 지정 -->
+  <arg name="csv" default="/root/ws/src/roscpp_morai/data/ego_path.csv"/>
+  <arg name="pub_rate" default="5.0"/>
+
+  <node pkg="roscpp_morai" type="global_path_publisher" name="global_path_publisher" output="screen">
+    <param name="file" value="$(arg csv)"/>
+    <param name="pub_rate" value="$(arg pub_rate)"/>
+  </node>
+</launch>

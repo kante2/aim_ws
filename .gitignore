@@ -1,0 +1,13 @@
+build/
+devel/
+install/
+log/
+build_isolated/
+devel_isolated/
+.colcon/
+.catkin_tools/
+*.pyc
+__pycache__/
+.vscode/
+.idea/
+.DS_Store

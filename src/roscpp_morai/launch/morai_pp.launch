@@ -1,0 +1,35 @@
+<launch>
+  <!-- 경로 파일 -->
+  <!-- <arg name="csv" default="/tmp/ego_path.csv"/> -->
+  <arg name="csv", default="/root/ws/src/roscpp_morai/data">
+  <arg name="forward_len" default="30.0"/>
+  <arg name="wheelbase" default="2.7"/>
+  <arg name="Ld_min" default="6.0"/>
+  <arg name="Ld_max" default="16.0"/>
+  <arg name="v_set" default="8.0"/>
+
+  <!-- 녹화: 수동주행 때만 켜세요 -->
+  <!-- <node pkg="roscpp_morai" type="ego_path_recorder" name="ego_path_recorder" output="screen">
+    <param name="file" value="$(arg csv)"/>
+    <param name="save_dist" value="0.7"/>
+  </node> -->
+
+  <!-- 녹화된 CSV → 글로벌 경로 -->
+  <node pkg="roscpp_morai" type="global_path_publisher" name="global_path_publisher" output="screen">
+    <param name="file" value="$(arg csv)"/>
+    <param name="pub_rate" value="5.0"/>
+  </node>
+
+  <!-- 로컬 경로 생성 -->
+  <node pkg="roscpp_morai" type="local_path_maker" name="local_path_maker" output="screen">
+    <param name="forward_len_m" value="$(arg forward_len)"/>
+  </node>
+
+  <!-- 퓨어퍼슛 컨트롤러 -->
+  <node pkg="roscpp_morai" type="pure_pursuit_controller" name="pure_pursuit_controller" output="screen">
+    <param name="wheelbase" value="$(arg wheelbase)"/>
+    <param name="Ld_min" value="$(arg Ld_min)"/>
+    <param name="Ld_max" value="$(arg Ld_max)"/>
+    <param name="v_set" value="$(arg v_set)"/>
+  </node>
+</launch>

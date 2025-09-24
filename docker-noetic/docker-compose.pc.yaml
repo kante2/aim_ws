@@ -1,0 +1,53 @@
+services:
+  aim-noetic-pc:
+    build:
+      context: ..                 # 리포 루트(~/aim_ws)
+      dockerfile: docker-noetic/Dockerfile
+    image: aim-noetic:pc
+    container_name: aim-noetic-pc
+
+    # 호스트와 같은 네트워크 네임스페이스 사용(ROS 통신 편의)
+    network_mode: host
+
+    # GPU 전달 (NVIDIA 4050)
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute
+      # X11 포워딩
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      # 필요시(드물게) 아래 둘 중 하나로 트러블슈팅
+      # - __GLX_VENDOR_LIBRARY_NAME=nvidia
+      # - LIBGL_ALWAYS_SOFTWARE=1
+
+      # ROS1(단일 로컬 컨테이너 기준)
+      - ROS_MASTER_URI=http://127.0.0.1:11311
+      - ROS_IP=127.0.0.1
+
+    volumes:
+      # X11 소켓 공유
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # 호스트 워크스페이스 ↔ 컨테이너 /root/ws
+      - ${HOME}/aim_ws:/root/ws:rw
+      # 타임존 동기화(로그 타임스탬프)
+      - /etc/localtime:/etc/localtime:ro
+
+    # 일부 OpenGL 드라이버가 /dev/dri를 요구(엔비디아에선 보통 불필요하지만 호환성용)
+    devices:
+      - /dev/dri:/dev/dri
+
+    # (옵션) 웹캠/시리얼 쓸 거면 아래 주석 해제
+    # devices:
+    #   - /dev/video0:/dev/video0
+    #   - /dev/ttyUSB0:/dev/ttyUSB0
+
+    # /dev/shm 용량 부족시 GUI 충돌 방지
+    shm_size: "2gb"
+
+    stdin_open: true
+    tty: true
+    command: ["tail","-f","/dev/null"]
+
+    # 필요하면 재시작 정책 사용
+    # restart: unless-stopped
