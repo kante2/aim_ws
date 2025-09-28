@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="roscpp_morai" type="pure_pursuit_node" name="pure_pursuit_node" output="screen">
+    <param name="wheelbase" value="2.7"/>
+    <param name="Ld_min"    value="6.0"/>
+    <param name="Ld_max"    value="16.0"/>
+    <param name="v_set"     value="8.0"/>
+  </node>
+</launch>

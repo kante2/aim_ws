@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="roscpp_morai" type="ego_bag_recorder" name="global_path_pub" output="screen">
+    <param name="csv_file" value="$(find roscpp_morai)/data/ego_path.csv"/>
+    <param name="frame_id" value="map"/>
+  </node>
+</launch>

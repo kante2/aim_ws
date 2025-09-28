@@ -8,34 +8,29 @@ services:
 
     # 호스트와 같은 네트워크 네임스페이스 사용(ROS 통신 편의)
     network_mode: host
+    gpus: all
 
     # GPU 전달 (NVIDIA 4050)
-    runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute
-      # X11 포워딩
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
-      # 필요시(드물게) 아래 둘 중 하나로 트러블슈팅
-      # - __GLX_VENDOR_LIBRARY_NAME=nvidia
-      # - LIBGL_ALWAYS_SOFTWARE=1
 
-      # ROS1(단일 로컬 컨테이너 기준)
-      - ROS_MASTER_URI=http://127.0.0.1:11311
-      - ROS_IP=127.0.0.1
+      # 🔽 하이브리드(AMD+iGPU + NVIDIA dGPU)에서 NVIDIA 강제
+      - __NV_PRIME_RENDER_OFFLOAD=1
+      - __GLX_VENDOR_LIBRARY_NAME=nvidia
+      - __VK_LAYER_NV_optimus=NVIDIA_only
+      # 선택: Wayland 환경이면 같이 주는 게 안전
+      - XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR}
 
     volumes:
-      # X11 소켓 공유
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      # 호스트 워크스페이스 ↔ 컨테이너 /root/ws
       - ${HOME}/aim_ws:/root/ws:rw
-      # 타임존 동기화(로그 타임스탬프)
       - /etc/localtime:/etc/localtime:ro
-
-    # 일부 OpenGL 드라이버가 /dev/dri를 요구(엔비디아에선 보통 불필요하지만 호환성용)
-    devices:
-      - /dev/dri:/dev/dri
+      - /home/kante/Downloads/MoraiLauncher_Lin:/mnt/MoraiLauncher_Lin:ro
+      # Wayland 소켓(선택, Ubuntu 기본이 Wayland면 추천)
+      - /run/user/${UID:-1000}:/run/user/${UID:-1000}
 
     # (옵션) 웹캠/시리얼 쓸 거면 아래 주석 해제
     # devices:

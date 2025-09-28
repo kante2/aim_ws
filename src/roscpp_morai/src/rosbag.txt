@@ -1,0 +1,6 @@
+mkdir -p /root/ws/src/roscpp_morai/rosbag
+
+rosbag record -O /root/ws/src/roscpp_morai/rosbag/drive_$(date +%F_%H%M%S).bag \
+  /Ego_topic /local_path /ctrl_cmd /global_path /tf /tf_static
+
+  

@@ -16,13 +16,16 @@ class EgoPathRecorder {
   Pose2D prev_pos{};
 
 // public - 밖에서 써야 하는 함수는 public으로 열어야 한다.
-//  그래야 main등에서 생성이 가능하다. 또한 콜백 포인터로 넘길 수 있다.
+// //  그래야 main등에서 생성이 가능하다. 또한 콜백 포인터로 넘길 수 있다.
 // private - class의 기본접근 제한자이다.
+
+// 함수 - -
+
 public:
   EgoPathRecorder(ros::NodeHandle& nh){
     // /root/ws/src/roscpp_morai/data
     // file에 변수가 안들어오면 다음 "root/...부분이 경로로 들어가게 된다"
-    std::string file; nh.param<std::string>("file", file, "/root/ws/src/roscpp_morai/data/ego_path.cvs");
+    std::string file; nh.param<std::string>("file", file, "/root/ws/src/roscpp_morai/data/ego_path.csv");
     // save_distance는 이전 기록점과의 최소 이동거리이다 -> 이 이상 움직이면 한 줄을 저장한다.
     nh.param<double>("save_dist", save_distance, 0.7); // 0.5~1.0 m 권장
     // 1.출력 파일 스트림 객체를 연다.
@@ -44,8 +47,17 @@ public:
     Pose2D p{m->position.x, m->position.y, m->heading}; // P에 현재 포즈를 담는다. 
 
     // 첫 샘플  무조한 한줄쓰고 prev를 리턴한다.
+    // if(!have_prev_){
+    //   ofstream <<p.x<<","<<p.y<<","<<p.yaw<<"\n"; prev_=p; have_prev_=true; return;
+    // }
     if(!have_prev_){
-      ofstream <<p.x<<","<<p.y<<","<<p.yaw<<"\n"; prev_=p; have_prev_=true; return;
+      ofstream << p.x << "," << p.y << "," << p.yaw << "\n";
+      cout<< p;
+      cout<< "prinof" ;
+      
+      prev_pos = p;  // prev_ → prev_pos로 변경
+      have_prev_ = true;
+      return;
     }
 
     double dx=p.x-prev_pos.x, dy=p.y-prev_pos.y;
