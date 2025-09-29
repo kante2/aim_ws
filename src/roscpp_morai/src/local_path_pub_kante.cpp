@@ -78,7 +78,7 @@ void CB_Ego(const morai_msgs::EgoVehicleStatus::ConstPtr& ego){
 }
 
 int main(int argc, char** argv){
-  ros::init(argc, argv, "local_path_pub_fn");
+  ros::init(argc, argv, "local_path_pub_node");
   ros::NodeHandle nodehandler("~");
 
   // 파라미터
@@ -89,7 +89,7 @@ int main(int argc, char** argv){
   ros::Subscriber sub_g = nodehandler.subscribe("/global_path", 1, CB_Global);
   ros::Subscriber sub_e = nodehandler.subscribe("/Ego_topic", 10, CB_Ego);
 
-  ROS_INFO_STREAM("[local_path_pub_fn] forward_len_m=" << gb_forward_len);
+  ROS_INFO_STREAM("[local_path_pub_node] forward_len_m=" << gb_forward_len);
   ros::spin();
   return 0;
 }

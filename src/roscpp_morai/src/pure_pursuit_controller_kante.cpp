@@ -5,23 +5,17 @@
 #include <cmath>
 #include <algorithm>   // std::min/max
 
-// ----------------- 전역 상태 -----------------
+// 전역 변수------------------
 nav_msgs::Path g_local;
 morai_msgs::EgoVehicleStatus g_ego;
 bool g_have_local = false;
 bool g_have_ego   = false;
 ros::Publisher g_pub_cmd;
 
-// ----------------- 파라미터 ------------------
+// 파라미터------------------
 double g_wheelbase = 2.7;   // [m]
 double g_v_set     = 4.0;   // [m/s]; 간단 정속
 
-// ----------------- 유틸 ----------------------
-// static inline double clamp(double x, double lo, double hi){
-//   if (x < lo) return lo;
-//   if (x > hi) return hi;
-//   return x;
-// }
 
 static int nearestIndex(const nav_msgs::Path& Pose, double x, double y){
   if (Pose.poses.empty()) return -1;
@@ -35,7 +29,8 @@ static int nearestIndex(const nav_msgs::Path& Pose, double x, double y){
   return best;
 }
 
-// ----------------- 핵심 로직 ------------------
+// 로직 ------------------
+
 static void runPP(){
   if (!(g_have_local && g_have_ego)) return;
   if (g_local.poses.size() < 2) return;
@@ -74,7 +69,7 @@ static void runPP(){
   g_pub_cmd.publish(cmd);
 }
 
-// ----------------- 콜백 ----------------------
+// 콜백 ----------------------
 void CB_local(const nav_msgs::Path::ConstPtr& msg){
   g_local = *msg;
   g_have_local = !g_local.poses.empty();
@@ -97,14 +92,14 @@ void CB_ego(const morai_msgs::EgoVehicleStatus::ConstPtr& ego){
   runPP(); // pp은 ego주기로만 한다. 
 }
 
-// ----------------- main ----------------------
+//  main ----------------------
 int main(int argc, char** argv){
-  ros::init(argc, argv, "pure_pursuit_from_local_fn");
+  ros::init(argc, argv, "pure_pursuit_controller_kante_node");
   ros::NodeHandle nh("~");
 
   // 파라미터
   nh.param<double>("wheelbase", g_wheelbase, 2.7);
-  nh.param<double>("v_set",     g_v_set,     4.0);
+  nh.param<double>("v_set", g_v_set, 4.0);
 
   // 토픽
   g_pub_cmd = nh.advertise<morai_msgs::CtrlCmd>("/ctrl_cmd", 1);

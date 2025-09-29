@@ -10,7 +10,7 @@
 // std::무언가 형태로 씀,
 
 int main(int argc, char** argv){
-    ros::init(argc, argv, "global_path_pub");
+    ros::init(argc, argv, "global_path_pub_node");
     ros::NodeHandle nodehandler("~");
 
     // 1) 퍼블리셔: 
@@ -80,7 +80,7 @@ int main(int argc, char** argv){
     // 6) 퍼블리시 (라치드라 1회면 충분)
     ROS_INFO_STREAM("[gb_pose] =" << path);
     pub.publish(path);
-    ROS_INFO("[global_path_pub] published %zu poses from %s",
+    ROS_INFO("[global_path_pub_node] published %zu poses from %s",
             path.poses.size(), csv_file.c_str());
 
     ros::spin(); // latched 유지
