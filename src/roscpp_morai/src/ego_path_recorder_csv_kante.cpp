@@ -13,18 +13,14 @@ void CB_ego(const morai_msgs::EgoVehicleStatus::ConstPtr& ego_msg)
   if(!g_open_csv_flag) return;
 
   if(!g_wrote_header_flag){
-    g_csv << "stamp,x,y,yaw\n";
+    g_csv << "x,y,yaw\n";
     g_wrote_header_flag = true;
   }
-
-  // 타임스탬프: 메시지에 header가 없다고 가정하고 now() 사용
-  const double stamp = ros::Time::now().toSec();
 
   g_csv << std::fixed << std::setprecision(6)
         << ego_msg->position.x << ","
         << ego_msg->position.y << ","
         << ego_msg->heading    << "\n";
-  // g_csv.flush();  // 필요시 주석 해제(실시간 디스크 기록)
 }
 
 int main(int argc, char** argv)
