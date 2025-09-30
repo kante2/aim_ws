@@ -49,12 +49,16 @@ void wgs_to_enu(double lat_deg, double lon_deg, double alt_m,
 
 //  ego(map) -> WGS84(LLA) ==================
 // (ego_x,y,z) 입력, (lat,lon,alt) 출력
+// double& lat_deg, double& lon_deg, double& alt_m - 참조로 채운다. 이함수를 호출한 곳에서
+//  lat_deg, lon_deg, alt_m 변수가 채워지게 된다.
 void ego_to_wgs84(double ego_x, double ego_y, double ego_z,
                   double& lat_deg, double& lon_deg, double& alt_m)
 {
   if(!g_lc_inited) return;
   double E,N,U;
+  // 1.맵좌표 -ENU축 결정
   MapXYToENU(ego_x, ego_y, ego_z, E, N, U);
+  // 2.원점(g_lat0,g_lon0, g_alt0은 enu원점(0,0,0)에 대응하는 wgs84 )
   g_lc.Reverse(E, N, U, lat_deg, lon_deg, alt_m); // ENU -> LLA
 }
 
@@ -80,7 +84,7 @@ void CB_ego(const morai_msgs::EgoVehicleStatus::ConstPtr& ego_msg)
   const double ego_z = ego_msg->position.z;
 
   // ego -> WGS84
-  double lat, lon, alt;
+  double lat, lon, alt; // 지역변수로 선언 - 참조로 값을 채워준다. 
   ego_to_wgs84(ego_x, ego_y, ego_z, lat, lon, alt);
 
   // WGS -> UTM

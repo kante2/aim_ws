@@ -18,8 +18,8 @@
 
     <!-- 토픽 이름이 다르면 여기서 remap -->
     <remap from="/Ego_topic" to="/Ego_topic"/>
-    <!-- GNSS를 직접 구독하는 코드가 있다면 remap 추가
-    <remap from="/gps/fix" to="/gps/fix"/>
-    -->
+    <!-- GNSS를 직접 구독하는 코드가 있다면 remap 추가 -->
+    <remap from="/gps/fix" to="/gps"/>
+   
   </node>
 </launch>
