@@ -1,7 +1,7 @@
-origin_lat: 37.123456789 # enu좌표계의 원점에 대응하는, WGS84 위도 - degree
-origin_lon: 126.987654321 # enu좌표계의 원점에 대응하는, WGS84 경도 - degree
-origin_alt: 15.2 # 원점의 고도 - 미터 / gps의 altitude
+origin_lat: 37.123456789
+origin_lon: 126.987654321
+origin_alt: 15.2
 map_to_true_north_yaw_deg: 0.0   # 모르면 0부터 사용, 추후 보정
 # 필요하면 GNSS, EGO 토픽 이름도 적어 두세요(런치에서 remap 가능)
 ego_topic: /Ego_topic
-gps_topic: /gps/fix  # gnss데이터를 구독할 토픽이름 
+gps_topic: /gps/fix

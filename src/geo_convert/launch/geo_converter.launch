@@ -1,25 +1,23 @@
 <launch>
-  <!-- 선택: YAML로 파라미터 로드 -->
-  <rosparam file="$(find geo_convert)/config/coord.yaml" command="load"/>
+  <!-- 공통 파라미터 -->
+  <arg name="origin_lat" default="37.239375"/>
+  <arg name="origin_lon" default="126.7731828"/>
+  <arg name="origin_alt" default="29.2783124182"/>
+  <arg name="map_to_true_north_yaw_deg" default="0.0"/>
 
-  <!-- 필요하면 인자로 덮어쓰기 가능 -->
-  <arg name="origin_lat" default="$(optenv ORIGIN_LAT 0.0)"/>
-  <arg name="origin_lon" default="$(optenv ORIGIN_LON 0.0)"/>
-  <arg name="origin_alt" default="$(optenv ORIGIN_ALT 0.0)"/>
-  <arg name="map_to_true_north_yaw_deg" default="$(optenv MAP_YAW_DEG 0.0)"/>
-
-  <!-- 노드 실행 -->
-  <node pkg="geo_convert" type="geo_converter" name="geo_converter" output="screen">
-    <!-- 파라미터 주입 (YAML을 기본으로, arg로 덮어쓸 수 있음) -->
+  <node pkg="geo_convert" type="coord_convert_ego_node" name="coord_convert_ego_node" output="screen">
     <param name="origin_lat" value="$(arg origin_lat)"/>
     <param name="origin_lon" value="$(arg origin_lon)"/>
     <param name="origin_alt" value="$(arg origin_alt)"/>
     <param name="map_to_true_north_yaw_deg" value="$(arg map_to_true_north_yaw_deg)"/>
-
-    <!-- 토픽 이름이 다르면 여기서 remap -->
     <remap from="/Ego_topic" to="/Ego_topic"/>
-    <!-- GNSS를 직접 구독하는 코드가 있다면 remap 추가 -->
-    <remap from="/gps/fix" to="/gps"/>
-   
+  </node>
+
+  <node pkg="geo_convert" type="coord_convert_gps_node" name="coord_convert_gps_node" output="screen">
+    <param name="origin_lat" value="$(arg origin_lat)"/>
+    <param name="origin_lon" value="$(arg origin_lon)"/>
+    <param name="origin_alt" value="$(arg origin_alt)"/>
+    <param name="map_to_true_north_yaw_deg" value="$(arg map_to_true_north_yaw_deg)"/>
+    <remap from="/gps" to="/gps"/>
   </node>
 </launch>

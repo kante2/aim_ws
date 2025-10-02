@@ -95,24 +95,24 @@ int main(int argc, char** argv){
 }
 
 
-'''
-nav_msgs::Path path;
-// path.header ...
-path.poses = std::vector<geometry_msgs::PoseStamped>{
-  // [0]
-  {
-    .header = { .frame_id="map", .stamp=... },
-    .pose = {
-      .position    = { .x=0.0,  .y=0.0,  .z=0.0 },
-      .orientation = { .x=0.0,  .y=0.0,  .z=0.0, .w=1.0 }
-    }
-  },
-  // [1]
-  {
-    .header = { .frame_id="map", .stamp=... },
-    .pose = {
-      .position    = { .x=10.0, .y=0.0,  .z=0.0 },
-      .orientation = { .x=0.0,  .y=0.0,  .z=0.0, .w=1.0 }
-    }
-  },
-'''
+// '''
+// nav_msgs::Path path;
+// // path.header ...
+// path.poses = std::vector<geometry_msgs::PoseStamped>{
+//   // [0]
+//   {
+//     .header = { .frame_id="map", .stamp=... },
+//     .pose = {
+//       .position    = { .x=0.0,  .y=0.0,  .z=0.0 },
+//       .orientation = { .x=0.0,  .y=0.0,  .z=0.0, .w=1.0 }
+//     }
+//   },
+//   // [1]
+//   {
+//     .header = { .frame_id="map", .stamp=... },
+//     .pose = {
+//       .position    = { .x=10.0, .y=0.0,  .z=0.0 },
+//       .orientation = { .x=0.0,  .y=0.0,  .z=0.0, .w=1.0 }
+//     }
+//   },
+// '''

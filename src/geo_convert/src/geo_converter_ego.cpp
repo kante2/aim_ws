@@ -1,13 +1,15 @@
 #include <ros/ros.h>
 #include <morai_msgs/EgoVehicleStatus.h>
+#include <morai_msgs/GPSMessage.h>     // 타입 호환 위해 포함(미사용)
 #include <GeographicLib/LocalCartesian.hpp>
 #include <GeographicLib/UTMUPS.hpp>
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <limits>
 
 // ======= 글로벌 설정값 =======
-// 
+// 원점 (launch/param으로 덮어씀)
 static double g_lat0 = 37.239375;
 static double g_lon0 = 126.7731828;
 static double g_alt0 = 29.2783124182;
@@ -16,7 +18,7 @@ static double g_map_to_true_north_yaw_deg = 0.0;
 static GeographicLib::LocalCartesian g_lc;
 static bool g_lc_inited = false;
 
-// map(x,y,z) -> ENU(E,N,U)로 회전 정렬
+// ======= map(x, y, z) → ENU 회전 정렬 =======
 static inline void MapXYToENU(double x, double y, double z,
                               double& E, double& N, double& U)
 {
@@ -27,8 +29,7 @@ static inline void MapXYToENU(double x, double y, double z,
   U =  z;
 }
 
-// 미션1: WGS -> UTM ==================
-// (lat,lon,alt) 입력, (e,n,zone,northp) 출력
+// ======= 미션1: WGS → UTM ===================
 void wgs_to_utm(double lat_deg, double lon_deg, double alt_m,
                 double& easting, double& northing, int& zone, bool& northp)
 {
@@ -36,113 +37,105 @@ void wgs_to_utm(double lat_deg, double lon_deg, double alt_m,
   GeographicLib::UTMUPS::Forward(lat_deg, lon_deg, zone, northp, x, y);
   easting  = x;
   northing = y;
-  (void)alt_m; // UTM 변환 자체는 고도 영향 없음
+  (void)alt_m; // 고도는 무시
 }
 
-// 미션2: WGS -> ENU ==================
-// (lat,lon,alt) 입력, (E,N,U) 출력
+// ======= 미션2: WGS → ENU ===================
 void wgs_to_enu(double lat_deg, double lon_deg, double alt_m,
                 double& E, double& N, double& U)
 {
   if(!g_lc_inited) return;
-  g_lc.Forward(lat_deg, lon_deg, alt_m, E, N, U); // LLA -> ENU
+  g_lc.Forward(lat_deg, lon_deg, alt_m, E, N, U); // LLA → ENU
 }
 
-//  ego(map) -> WGS84(LLA) ==================
-// (ego_x,y,z) 입력, (lat,lon,alt) 출력
+// ======= 미션3: map → WGS84 =================
 void ego_to_wgs84(double ego_x, double ego_y, double ego_z,
                   double& lat_deg, double& lon_deg, double& alt_m)
 {
   if(!g_lc_inited) return;
-  double E,N,U;
-  MapXYToENU(ego_x, ego_y, ego_z, E, N, U);
-  g_lc.Reverse(E, N, U, lat_deg, lon_deg, alt_m); // ENU -> LLA
+  double E, N, U;
+  MapXYToENU(ego_x, ego_y, ego_z, E, N, U);       // map → ENU
+  g_lc.Reverse(E, N, U, lat_deg, lon_deg, alt_m); // ENU → LLA
 }
 
-// 미션3: ego -> WGS84 -> ENU =================
-// (ego ptr) 입력, (E,N,U) 출력
+// ======= 미션4: map → WGS84 → ENU ===========
 void ego_to_wgs84_to_enu(const morai_msgs::EgoVehicleStatus::ConstPtr& ego,
                          double& E, double& N, double& U)
 {
   if(!g_lc_inited) return;
-
-  // 1) ego(map) -> WGS84
   double lat, lon, alt;
   ego_to_wgs84(ego->position.x, ego->position.y, ego->position.z, lat, lon, alt);
-  // 2) WGS84 -> ENU
   wgs_to_enu(lat, lon, alt, E, N, U);
 }
 
-// 콜백 =================
+// ======= 콜백: Ego ==========================
 void CB_ego(const morai_msgs::EgoVehicleStatus::ConstPtr& ego_msg)
 {
   const double ego_x = ego_msg->position.x;
   const double ego_y = ego_msg->position.y;
   const double ego_z = ego_msg->position.z;
 
-  // ego -> WGS84
-  double lat, lon, alt;
+  // 미션3: map → WGS84
+  double lat = std::numeric_limits<double>::quiet_NaN();
+  double lon = std::numeric_limits<double>::quiet_NaN();
+  double alt = std::numeric_limits<double>::quiet_NaN();
   ego_to_wgs84(ego_x, ego_y, ego_z, lat, lon, alt);
+  if(!g_lc_inited || !std::isfinite(lat) || !std::isfinite(lon)) return;
 
-  // WGS -> UTM
+  // 미션1: WGS → UTM
   double utm_e, utm_n; int utm_zone; bool utm_northp;
   wgs_to_utm(lat, lon, alt, utm_e, utm_n, utm_zone, utm_northp);
 
-  // WGS -> ENU
+  // 미션2: WGS → ENU
   double e1, n1, u1;
   wgs_to_enu(lat, lon, alt, e1, n1, u1);
 
-  // ego -> WGS -> ENU (검증 파이프라인, 동일 origin)
+  // 미션4: map → WGS → ENU
   double e2, n2, u2;
   ego_to_wgs84_to_enu(ego_msg, e2, n2, u2);
 
-  // map -> ENU 직접 회전(참값)
+  // map 직접 회전 (참값)
   double e_ref, n_ref, u_ref;
   MapXYToENU(ego_x, ego_y, ego_z, e_ref, n_ref, u_ref);
 
-  // 출력
   ROS_INFO_STREAM(std::fixed << std::setprecision(6)
-    << "\n[Ego map] x=" << ego_x << ", y=" << ego_y << ", z=" << ego_z
-    << "\n[WGS84]   lat=" << lat << ", lon=" << lon << ", alt=" << alt
-    << "\n[UTM]     E=" << utm_e << ", N=" << utm_n
+    << "\n========== [Mission: Conversion Based on Ego] =========="
+    << "\n[Ego map]             x=" << ego_x << ", y=" << ego_y << ", z=" << ego_z
+    << std::setprecision(6)
+    << "\n[WGS84 converted]     lat=" << lat << ", lon=" << lon << ", alt=" << alt
+    << std::setprecision(6)
+    << "\n[UTM converted]       E=" << utm_e << ", N=" << utm_n
     << ", zone=" << utm_zone << (utm_northp ? "N" : "S")
-    << "\n[ENU from WGS]      E1=" << e1 << ", N1=" << n1 << ", U1=" << u1
-    << "\n[ego->WGS->ENU]     E2=" << e2 << ", N2=" << n2 << ", U2=" << u2
-    << "\n[map->ENU (rotate)] E*=" << e_ref << ", N*=" << n_ref << ", U*=" << u_ref
-    << "\nDiff(E1-E*)=" << (e1 - e_ref)
-    << ", Diff(N1-N*)=" << (n1 - n_ref)
-    << ", Diff(U1-U*)=" << (u1 - u_ref)
-  );
+    << std::setprecision(6)
+    << "\n[WGS → ENU]           E1=" << e1 << ", N1=" << n1 << ", U1=" << u1
+    << "\n[map → WGS → ENU]     E2=" << e2 << ", N2=" << n2 << ", U2=" << u2
+    << "\n[Map rotation (ref)]  E*=" << e_ref << ", N*=" << n_ref << ", U*=" << u_ref
+    << "\n[Diff (E1 - E*)]      dE=" << (e1 - e_ref)
+    << ", dN=" << (n1 - n_ref) << ", dU=" << (u1 - u_ref)
+    << "\n=========================================================");
 }
 
+// ======= main ==================================
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "coord_convert_node");
+  ros::init(argc, argv, "coord_convert_ego_node");
   ros::NodeHandle nh("~");
 
-  nh.param("origin_lat", g_lat0, g_lat0); // 맵의 (0,0,0)이 실제 지구에서 어디인지(WGS-84)
+  nh.param("origin_lat", g_lat0, g_lat0);
   nh.param("origin_lon", g_lon0, g_lon0);
   nh.param("origin_alt", g_alt0, g_alt0);
-  // 맵의 +Y축이 ‘진북’과 몇 도 다른지
   nh.param("map_to_true_north_yaw_deg", g_map_to_true_north_yaw_deg, g_map_to_true_north_yaw_deg);
 
   g_lc.Reset(g_lat0, g_lon0, g_alt0);
   g_lc_inited = true;
 
-  ros::Subscriber sub = nh.subscribe("/Ego_topic", 10, CB_ego);
+  ROS_INFO_STREAM("[coord_convert_ego_node] origin = ("
+    << std::fixed << std::setprecision(8)
+    << g_lat0 << ", " << g_lon0 << ", " << std::setprecision(3) << g_alt0
+    << "), map_to_true_north_yaw_deg = " << g_map_to_true_north_yaw_deg);
+
+  ros::Subscriber sub_ego = nh.subscribe("/Ego_topic", 10, CB_ego);
+
   ros::spin();
   return 0;
 }
-
-/*
-
-[INFO] [1759343422.926844351]: 
-[Ego map] x=13.502839, y=1099.998291, z=-0.318256
-[WGS84]   lat=37.249286, lon=126.773335, alt=29.055213
-[UTM]     E=302515.351135, N=4124850.485680, zone=52N
-[ENU from WGS]      E1=13.502839, N1=1099.998291, U1=-0.318256
-[ego->WGS->ENU]     E2=13.502839, N2=1099.998291, U2=-0.318256
-[map->ENU (rotate)] E*=13.502839, N*=1099.998291, U*=-0.318256
-Diff(E1-E*)=0.000000, Diff(N1-N*)=-0.000000, Diff(U1-U*)=0.000000
-
-*/

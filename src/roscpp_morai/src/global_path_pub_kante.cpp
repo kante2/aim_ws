@@ -23,7 +23,10 @@ int main(int argc, char** argv){
     // path는 그 타입으로 만든 변수명  
     // csv -> nav_msg/Path로 만들고 --> /global_path토픽으로 퍼블리시 하는 역할이다.
     nav_msgs::Path path;
-    std::string csv_file; nodehandler.param<std::string>("csv_file", csv_file, "/tmp/ego_path.csv");
+    // std::string csv_file; nodehandler.param<std::string>("csv_file", csv_file, "/aim_ws/src/roscpp_morai/data/ego_path.csv");
+    std::string csv_file; 
+    nodehandler.param<std::string>("csv_file", csv_file, "/home/autonav/aim_ws/src/roscpp_morai/data/ego_path.csv");
+
     std::string frame_id; nodehandler.param<std::string>("frame_id", frame_id, "map");
 
     path.header.stamp = ros::Time::now();

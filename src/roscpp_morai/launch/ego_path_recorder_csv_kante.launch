@@ -1,0 +1,9 @@
+<launch>
+  <node pkg="roscpp_morai" type="ego_path_recorder_csv_kante" name="ego_path_recorder_csv_kante" output="screen">
+    <!-- <param name="file" value="/tmp/ego_path.csv"/> -->
+    <!-- <param name="file" value="$(find roscpp_morai)/data/ego_path.csv"/> -->
+    <!-- <param name="csv_file" value="/home/autonav/aim_ws/data/ego_topic.csv"/> -->
+    <param name="csv_file" value="/home/autonav/aim_ws/data/ego_topic.csv"/>
+    <param name="save_dist" value="0.7"/>
+  </node>
+</launch>
