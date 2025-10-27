@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="roscpp_morai" type="ego_bag_recorder" name="ego_bag_recorder" output="screen">
+    <param name="bag_file" value="/root/ws/src/roscpp_morai/rosbag/ego.bag"/>
+  </node>
+</launch>

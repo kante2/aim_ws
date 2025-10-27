@@ -1,6 +1,6 @@
-# AIM_2025_2 cpp 개발과정 진행을 위한 ws
+AIM_2025_2 cpp 개발과정 진행을 위한 ws
 
-# wk1.
+wk1.
 
 과제
 
@@ -18,3 +18,30 @@
 - pure pursuit 이용
 -> morai ego 이용
 -> path도 ego 이용해서 만들기
+
+morai를 사용하기 위해 host에 vulkan이라는걸 설치해야 한다고 한다.
+vulkaninfo를 하면 vulkan version체크가 되면 확인이 된다.
+-morai sim 공홈 설치 가이드 참고
+
+
+# ----------------------------------------------------
+
+
+MORAI-DriveExample_ROS
+$ mkdir -p ~/catkin_ws/src
+$ cd ~/catkin_ws/src && catkin_init_workspace
+$ git clone https://github.com/MORAI-Autonomous/MORAI-DriveExample_ROS.git
+$ cd MORAI-DriveExample_ROS
+$ git submodule update --init --recursive
+$ sudo chmod -R a+x morai_standard/
+$ find -name 'requirements.txt' | xargs -L 1 sudo pip install -U -r
+$ cd ~/catkin_ws
+$ rosdep install --from-paths . --ignore-src -r -y
+$ catkin_make
+$ source devel/setup.bash
+
+
+# -----------------
+sudo apt-get install ros-noetic-rosbridge-server
+
+roslaunch rosbridge_server rosbridge_websocket.launch

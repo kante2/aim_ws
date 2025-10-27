@@ -28,7 +28,8 @@ void CB_ego(const morai_msgs::EgoVehicleStatus::ConstPtr& ego_msg)
     g_csv << std::fixed << std::setprecision(6)
           << ego_msg->position.x << ","
           << ego_msg->position.y << ","
-          << ego_msg->heading - 61.0 << "\n";
+        //   << ego_msg->heading - 61.0 << "\n";
+        << ego_msg->heading<< "\n";
         //   << ego_msg->heading << "\n";
 
     g_log << "[INFO] Recorded: x=" << ego_msg->position.x
@@ -42,11 +43,15 @@ int main(int argc, char** argv)
     ros::NodeHandle nh("~");
 
     // CSV 파일 경로
-    std::string csv_file = "/home/autonav/aim_ws/src/roscpp_morai/data/ego_topic.csv";
+    // std::string csv_file = "/home/autonav/aim_ws/src/roscpp_morai/data/ego_topic.csv";
+
+    // // 로그 파일 경로
+    // std::string log_file = "/home/autonav/aim_ws/src/roscpp_morai/data/ego_topic_log.txt";
+
+    std::string csv_file = "/root/ws/src/roscpp_morai/data/ego_topic.csv";
 
     // 로그 파일 경로
-    std::string log_file = "/home/autonav/aim_ws/src/roscpp_morai/data/ego_topic_log.txt";
-
+    std::string log_file = "/root/ws/src/roscpp_morai/data/ego_topic_log.txt";
     // CSV 파일 열기
     g_csv.open(csv_file, std::ios::out | std::ios::trunc);
     if(!g_csv){

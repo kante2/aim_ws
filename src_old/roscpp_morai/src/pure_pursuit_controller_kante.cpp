@@ -86,9 +86,7 @@ void CB_ego(const morai_msgs::EgoVehicleStatus::ConstPtr& ego){
     double dx = p_local.x - g_ego.position.x;
     double dy = p_local.y - g_ego.position.y;
     double d  = std::hypot(dx, dy);
-    // ROS_INFO(0.2, "[start-err] d=%.3f m (dx=%.3f, dy=%.3f)", d, dx, dy);
-    ROS_INFO("[start-err] d=%.3f m (dx=%.3f, dy=%.3f)", d, dx, dy);
-
+    ROS_INFO(0.2, "[start-err] d=%.3f m (dx=%.3f, dy=%.3f)", d, dx, dy);
   }
 
   runPP(); // pp은 ego주기로만 한다. 

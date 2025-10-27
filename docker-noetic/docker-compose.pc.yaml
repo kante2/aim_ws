@@ -1,7 +1,7 @@
 services:
   aim-noetic-pc:
     build:
-      context: ..                 # 리포 루트(~/aim_ws)
+      context: ..                 # 리포 루트(~/''')
       dockerfile: docker-noetic/Dockerfile
     image: aim-noetic:pc
     container_name: aim-noetic-pc

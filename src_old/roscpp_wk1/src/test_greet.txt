@@ -1,0 +1,14 @@
+# 빌드 후 환경 로드
+cd ~/ws && catkin_make --pkg roscpp_wk1
+source devel/setup.bash
+
+# 타입 정보 보기
+rosmsg show roscpp_wk1/Greeting
+
+# 실행
+roscore
+rosrun roscpp_wk1 greet_pub
+rosrun roscpp_wk1 greet_sub
+# 또는
+rostopic echo /greeting
+rostopic info /greeting
