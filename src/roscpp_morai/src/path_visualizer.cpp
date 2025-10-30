@@ -31,9 +31,12 @@ public:
     nh_.param<std::string>("ref_file",  ref_file_,  std::string("/root/ws/src/roscpp_morai/map/ref.txt"));
     nh_.param<std::string>("path_file", path_file_, std::string("/root/ws/src/roscpp_morai/map/Path.txt"));
     nh_.param<std::string>("frame_id",  frame_id_,  std::string("map"));
-    nh_.param<double>("highlight_dist", highlight_dist_, 30.0); // 빨간 강조 길이 [m]
+    nh_.param<double>("highlight_dist", highlight_dist_, 30.0); // 거리 기반 빨간 강조 길이 [m]
     nh_.param<double>("line_width",     line_width_,     0.2);  // 라인 두께 [m]
     nh_.param<bool>("show_current",     show_current_,   true); // 현재 위치 마커 표시
+
+    // ---- 추가 파라미터: 개수 기반 강조 ----
+    nh_.param<int>("highlight_count", highlight_count_, 0);     // 0이면 비활성(거리 기반 유지)
 
     if (!loadOrigin(ref_file_)) {
       ROS_FATAL("[path_vis] failed to load ENU origin from %s", ref_file_.c_str());
@@ -102,7 +105,7 @@ private:
   }
 
   void timerCB(const ros::TimerEvent&) {
-    // 전체 경로는 1회 발행해도 되지만, RViz 재시작 대비 가끔 재송신해도 무방
+    // RViz 재시작 대비 주기적 재송신
     static int cnt = 0;
     if ((cnt++ % 50) == 0) {
       publishFullPathMarker();
@@ -115,27 +118,40 @@ private:
     const int nearest_idx = findNearestIdx(enu_x_, enu_y_);
     if (nearest_idx < 0) return;
 
-    // 최근접부터 앞으로 highlight_dist_ 누적
+    // 최근접부터 앞으로 빨간 로컬패스 계산
     std::vector<geometry_msgs::Point> ahead_pts;
     ahead_pts.reserve(128);
 
+    // 시작점
     geometry_msgs::Point p;
     p.x = path_[nearest_idx].x; p.y = path_[nearest_idx].y; p.z = 0.0;
     ahead_pts.push_back(p);
 
-    double acc = 0.0;
-    for (size_t i = nearest_idx + 1; i < path_.size(); ++i) {
-      const double dx = path_[i].x - path_[i-1].x;
-      const double dy = path_[i].y - path_[i-1].y;
-      const double ds = std::hypot(dx, dy);
-      acc += ds;
-      geometry_msgs::Point q;
-      q.x = path_[i].x; q.y = path_[i].y; q.z = 0.0;
-      ahead_pts.push_back(q);
-      if (acc >= highlight_dist_) break;
+    if (highlight_count_ > 0) {
+      // ----- [개수 기반 강조] 최근접 이후 N개 포인트 -----
+      for (size_t i = nearest_idx + 1;
+           i < path_.size() && ahead_pts.size() < static_cast<size_t>(highlight_count_) + 1;
+           ++i) {
+        geometry_msgs::Point q;
+        q.x = path_[i].x; q.y = path_[i].y; q.z = 0.0;
+        ahead_pts.push_back(q);
+      }
+    } else {
+      // ----- [거리 기반 강조] 누적 길이가 highlight_dist_ 도달할 때까지 -----
+      double acc = 0.0;
+      for (size_t i = nearest_idx + 1; i < path_.size(); ++i) {
+        const double dx = path_[i].x - path_[i-1].x;
+        const double dy = path_[i].y - path_[i-1].y;
+        const double ds = std::hypot(dx, dy);
+        acc += ds;
+        geometry_msgs::Point q;
+        q.x = path_[i].x; q.y = path_[i].y; q.z = 0.0;
+        ahead_pts.push_back(q);
+        if (acc >= highlight_dist_) break;
+      }
     }
 
-    // 빨간 라인 마커
+    // 빨간 라인 마커(로컬 패스)
     visualization_msgs::Marker red;
     red.header.frame_id = frame_id_;
     red.header.stamp = ros::Time::now();
@@ -144,10 +160,7 @@ private:
     red.type = visualization_msgs::Marker::LINE_STRIP;
     red.action = visualization_msgs::Marker::ADD;
     red.scale.x = line_width_;
-    red.color.r = 1.0;
-    red.color.g = 0.0;
-    red.color.b = 0.0;
-    red.color.a = 1.0;
+    red.color.r = 1.0; red.color.g = 0.0; red.color.b = 0.0; red.color.a = 1.0;
     red.pose.orientation.w = 1.0;
     red.points = ahead_pts;
     marker_pub_.publish(red);
@@ -161,7 +174,7 @@ private:
       cur.id = 3;
       cur.type = visualization_msgs::Marker::SPHERE;
       cur.action = visualization_msgs::Marker::ADD;
-      cur.scale.x = cur.scale.y = cur.scale.z = std::max(1.5*line_width_, 0.3); // 보기 좋은 점 크기
+      cur.scale.x = cur.scale.y = cur.scale.z = std::max(1.5*line_width_, 0.3);
       cur.color.r = 1.0; cur.color.g = 1.0; cur.color.b = 0.0; cur.color.a = 1.0; // 노랑
       cur.pose.position.x = enu_x_;
       cur.pose.position.y = enu_y_;
@@ -246,7 +259,11 @@ private:
   double highlight_dist_;
   double line_width_;
   bool show_current_;
+
+  // ---- 추가: 개수 기반 강조 ----
+  int highlight_count_;
 };
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "path_visualizer");
   PathVisualizer node;
