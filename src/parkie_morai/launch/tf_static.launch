@@ -1,0 +1,43 @@
+<launch>
+  <!-- Args -->
+  <arg name="base_wrong"  default="base_link"/>        <!-- 오도메트리가 내보내는 기존 바디 -->
+  <arg name="base_frame"  default="base_link_fixed"/>  <!-- 바로잡아 쓸 새 바디 -->
+  <arg name="imu_frame"   default="IMU"/>
+  <arg name="lidar_frame" default="Lidar2D"/>
+  <arg name="gps_frame"   default="GPS"/>
+
+  <!-- base_link(잘못된 방향) -> base_link_fixed(정방향): z축 기준으로 회전,  = pi -->
+  <node pkg="tf2_ros" type="static_transform_publisher"
+        name="base_wrong_to_base_fixed"
+        args="0 0 0 3.141592653589793 0 0 $(arg base_wrong) $(arg base_frame)"/>
+
+  <!-- 센서는 '바로잡힌' base_link_fixed에 부착 -->
+  <node pkg="tf2_ros" type="static_transform_publisher"
+        name="base_to_imu"
+        args="0 0 0.12 0 0 0 $(arg base_frame) $(arg imu_frame)"/>
+  <node pkg="tf2_ros" type="static_transform_publisher"
+        name="base_to_lidar"
+        args="0.11 0 0.13 0 0 0 $(arg base_frame) $(arg lidar_frame)"/>
+  <node pkg="tf2_ros" type="static_transform_publisher"
+        name="base_to_gps"
+        args="0.11 0 0.13 0 0 0 $(arg base_frame) $(arg gps_frame)"/>
+</launch>
+
+
+<!-- 
+map > (SLAM: gmapping) > odom > (오도메트리/EKF )> base_link
+
+map → odom : SLAM/Localization의 담당
+
+예) slam_gmapping, amcl 등이 전역 위치를 보정하기 위해 publish
+
+odom → base_link : **오도메트리(네 로봇)**의 담당
+
+예) 휠 오돔, IMU, (필요시) EKF/Fusion 노드가 로봇의 짧은 구간 움직임을 publish
+
+base_link → (센서 프레임들) : 정적 TF(static_transform_publisher) -->
+
+
+<!-- 프레임 관계 보는 방법
+rosrun tf view_frames
+evince frames.pdf -->
