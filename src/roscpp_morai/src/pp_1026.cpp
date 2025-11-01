@@ -32,7 +32,7 @@ public:
     nh_.param<std::string>("path_file", path_file_, std::string("/root/ws/src/roscpp_morai/map/Path.txt"));
     nh_.param<double>("wheelbase", wheelbase_L, 3.0);         // 차량 휠베이스 [m]
     nh_.param<double>("lookahead", lfd_, 4.5);      // look-ahead 거리 [m] 4.5로 튜닝함. 
-    nh_.param<double>("target_kmh", target_vel_kmh, 15.0); // 15km/h (고정)
+    nh_.param<double>("target_kmh", target_vel_kmh, 20.0); // 15km/h (고정)
 
     // ENU 원점/경로 로드
     if (!loadOrigin(ref_file_)) {
