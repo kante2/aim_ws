@@ -11,3 +11,11 @@ __pycache__/
 .vscode/
 .idea/
 .DS_Store
+!src/ros_limo/**
+!src/geo_convert/**
+!src/slam_gmapping/**
+!src/roscpp_wk1/**
+!src/roscpp_morai/**
+!src/parkie_morai/**
+!src/geometry2/**
+!src/cartographer/**
