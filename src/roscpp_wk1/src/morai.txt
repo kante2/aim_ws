@@ -1,5 +1,0 @@
-cd ~/Downloads/MoraiLauncher_Lin
-
-chmod +x MoraiLauncher_Lin.x86_64 setPermission.sh MORAISim.sh LauncherUpdate.sh keylok_install.sh
-
-./MoraiLauncher_Lin

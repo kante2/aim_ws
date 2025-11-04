@@ -60,12 +60,42 @@ add_executable(local_path_pub_kante src/local_path_pub_kante.cpp)
 target_compile_features(local_path_pub_kante PRIVATE cxx_std_11)
 target_link_libraries(local_path_pub_kante ${catkin_LIBRARIES})
 
-
-add_executable(pp_1026 src/pp_1026.cpp)
+# -------------------------------------------------------------------------------
+# ONLY PRUE PURSUIT - KANTE UPLODADED / 1026 ~ 1031
+add_executable(pp_1026 src/control/pp_1026.cpp)
 target_compile_features(pp_1026 PRIVATE cxx_std_11)
 # Geographic(lib) 는 이 타깃(pp_1026)에서만 필요
 target_link_libraries(pp_1026 ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
 
+
 add_executable(path_visualizer src/path_visualizer.cpp)
-target_link_libraries(path_visualizer ${catkin_LIBRARIES} Geographic)
+target_link_libraries(path_visualizer ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
 add_dependencies(path_visualizer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# --------------------------------------------------------------------------------
+# ver1 -> PURE PURSUIT + OBSTACLE_AVOIDANCE ALL _ KANTE UPLODADED
+
+# (경로 수정) pp_1102 는 decision 폴더에 존재
+add_executable(pp_1102 src/decision/pp_1102.cpp)
+target_compile_features(pp_1102 PRIVATE cxx_std_11)
+target_link_libraries(pp_1102 ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+# OR.
+add_executable(pp_local_path_1102 src/pp_local_path_1102.cpp)
+target_link_libraries(pp_local_path_1102 ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+add_dependencies(pp_local_path_1102 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# --------------------------------------------------------------------------------
+# ver2 -> PURE PURSUIT + OBSTACLE_AVOIDANCE _ KANTE UPLODADED / 1102 ~
+# pp_with_obstacle.launch로 실행이 가능하다.! 
+# (경로 수정) convert_lidar_kante 는 perception 폴더에 존재
+add_executable(convert_lidar_kante src/perception/convert_lidar_kante.cpp)
+target_link_libraries(convert_lidar_kante ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+add_dependencies(convert_lidar_kante ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+# (파일명 오타 반영) 현재 파일명이 obstace_detector.cpp 임
+#   → 나중에 파일명을 obstacle_detector.cpp 로 바꾸면 여기 경로도 함께 바꿔주세요.
+add_executable(obstacle_detector src/perception/obstace_detector.cpp)
+target_link_libraries(obstacle_detector ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+
+# ----------------------------------------------------
+# gap navigatior morai.cpp
+add_executable(gap_navigator_morai src/decision/gap_navigator_morai.cpp)
+target_link_libraries(gap_navigator_morai ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})

@@ -1,0 +1,30 @@
+<launch>
+  <!-- 장애물 검출 노드 -->
+  <node pkg="roscpp_morai" type="obstacle_detector" name="obstacle_detector" output="screen">
+    <param name="scan_topic" value="/scan"/>
+    <param name="flag_topic" value="/avoid_flag"/>
+    <param name="obstacle_dist_thresh" value="2.5"/>
+    <param name="min_points_to_block" value="3"/>
+    <param name="release_points_thresh" value="1"/>
+    <param name="clear_frames_needed" value="3"/>
+    <param name="avoid_timeout_sec" value="2.5"/>
+    <param name="roi_front_x" value="4.0"/>
+    <param name="roi_front_w" value="2.0"/>
+    <param name="roi_side_x" value="3.0"/>
+    <param name="roi_side_w" value="1.2"/>
+  </node>
+
+  <!-- Pure Pursuit 노드 -->
+  <node pkg="roscpp_morai" type="pp_fixed_speed" name="pp_fixed_speed" output="screen">
+    <param name="ref_file"  value="/root/ws/src/roscpp_morai/map/ref.txt"/>
+    <param name="path_file" value="/root/ws/src/roscpp_morai/map/Path.txt"/>
+    <param name="wheelbase" value="3.0"/>
+    <param name="lookahead" value="4.5"/>
+    <param name="target_kmh" value="15.0"/>
+    <param name="avoid_kmh"  value="8.0"/>
+    <param name="flag_topic" value="/avoid_flag"/>
+  </node>
+    <!-- convert lidar 노드 -->
+  <node pkg="roscpp_morai" type="convert_lidar_kante" name="convert_lidar_kante" output="screen">
+  </node>
+</launch>

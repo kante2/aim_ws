@@ -1,0 +1,11 @@
+<launch>
+ 
+    <arg name="open_rviz" default="true"/>
+ 
+    <!-- Start AMCL Localization node -->
+    <include file="$(find my_amcl_launcher)/launch/my_amcl.launch" />
+ 
+    <!-- Start AMCL Localization node -->
+    <include file="$(find turtlebot_localization)/launch/start_ekf_localization.launch" />
+ 
+</launch>

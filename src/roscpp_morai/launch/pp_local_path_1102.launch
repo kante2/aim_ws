@@ -1,0 +1,22 @@
+<launch>
+<node pkg="roscpp_morai" type="pp_local_path_1102" name="pp_local_path_1102" output="screen">
+  <param name="ref_file" value="$(find roscpp_morai)/map/ref.txt"/>
+  <param name="path_file" value="$(find roscpp_morai)/map/Path.txt"/>
+  <param name="scan_topic" value="/scan"/>
+
+  <param name="wheelbase" value="3.0"/>
+  <param name="lookahead" value="4.5"/>
+  <param name="target_kmh" value="20.0"/>
+
+  <param name="obstacle_dist_thresh" value="2.5"/>
+  <param name="min_points_to_block" value="3"/>
+  <param name="clear_frames_needed" value="4"/>
+  <param name="avoid_steer_rad" value="0.35"/>
+  <param name="avoid_kmh" value="8.0"/>
+
+  <param name="roi_front_x" value="4.0"/>
+  <param name="roi_front_w" value="2.0"/>
+  <param name="roi_side_x"  value="3.0"/>
+  <param name="roi_side_w"  value="1.2"/>
+</node>
+</launch>

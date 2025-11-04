@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="localization_launch" type="ekf_localization_node" name="ekf_localization">
+        <rosparam command="load" file="$(find robot_localization)/config/ekf_localization.yaml"/>  
+    </node> 
+</launch>

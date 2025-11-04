@@ -8,11 +8,12 @@ options = {
   -- 프레임 이름
   map_frame = "map",
   tracking_frame = "base_link",        -- IMU 없다면 base_link로 OK
-  published_frame = "odom",            -- 로컬 포즈를 어느 프레임 기준으로 낼지
+  published_frame = "base_link",            -- 로컬 포즈를 어느 프레임 기준으로 낼지
   odom_frame = "odom",
 
   -- odom을 외부(EKF/휠)가 퍼블리시한다고 가정
   provide_odom_frame = false,
+  --provide_odom_frame = true, --임시
   publish_frame_projected_to_2d = true,
 
   -- 센서/입력

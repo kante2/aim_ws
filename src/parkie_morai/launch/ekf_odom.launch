@@ -1,0 +1,12 @@
+<launch>
+  <arg name="use_sim_time" default="false"/>
+  <param name="use_sim_time" value="$(arg use_sim_time)"/>
+
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_odom" output="screen">
+    <param name="use_sim_time" value="$(arg use_sim_time)"/>
+    <rosparam command="load" file="$(find parkie_morai)/config/ekf_odom.yaml"/>
+    <!-- 필요시 리맵: 소스 토픽 이름에 맞춰 바꾸세요 -->
+    <!-- <remap from="/wheel_odom" to="/your_wheel_odom"/> -->
+    <!-- <remap from="/imu/data"  to="/your_imu_topic"/> -->
+  </node>
+</launch>

@@ -1,0 +1,37 @@
+<launch>
+  <arg name="open_rviz" default="true"/>
+  <arg name="scan_topic" default="/scan"/>
+  <arg name="set_base_frame" default="base_link"/>
+  <arg name="set_odom_frame" default="odom"/>
+  <arg name="set_map_frame"  default="map"/>
+
+  <arg name="configuration_basename" default="turtlebot3_lds_2d.lua"/>
+
+  <!-- (필요 시) MORAI 센서/드라이버/브리지를 먼저 -->
+  <!-- 예: 라이다 변환 노드, EKF 등 -->
+
+  <!-- convert_lidar 노드 등 센서 변환 노드도 필요시 포함 -->
+
+  <!-- /root/ws/src/parkie_morai/src/convert_lidar.cpp -->
+  <include file="$(find parkie_morai)/launch/lidar.launch">
+    <arg name="in_topic"   value="/lidar2D"/>
+    <arg name="out_topic"  value="$(arg scan_topic)"/>
+    <!-- <arg name="rotate_deg" value="180.0"/> -->
+    <arg name="frame_id"   value="lidar"/>
+  </include>
+
+  <!-- 고정 TF: 필요시 수정 -->
+  <include file="$(find parkie_morai)/launch/tf_static.launch">
+  </include>
+
+
+  <!-- Gmapping 실행 -->
+  <include file="$(find my_mapping_launcher)/launch/my_gmapping_morai.launch">
+    <arg name="configuration_basename" value="$(arg configuration_basename)"/>
+    <arg name="scan_topic"     value="$(arg scan_topic)"/>
+    <arg name="set_base_frame" value="$(arg set_base_frame)"/>
+    <arg name="set_odom_frame" value="$(arg set_odom_frame)"/>
+    <arg name="set_map_frame"  value="$(arg set_map_frame)"/>
+    <!-- <arg name="open_rviz"      value="$(arg open_rviz)"/> -->
+  </include>
+</launch>

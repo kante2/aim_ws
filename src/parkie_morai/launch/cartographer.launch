@@ -20,6 +20,7 @@
         args="-configuration_directory $(arg configuration_directory)
               -configuration_basename  $(arg configuration_basename)">
     <remap from="scan" to="$(arg scan_topic)"/>
+    <remap from="odom" to="/odometry/filtered"/>
   </node>
 
   <!-- OccupancyGrid(/map) 퍼블리셔 -->
