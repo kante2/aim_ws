@@ -1,3 +1,0 @@
-<launch>
-  <node pkg="wego" type="navigation_client.py" name="navigation_client" output="screen" />
-</launch>

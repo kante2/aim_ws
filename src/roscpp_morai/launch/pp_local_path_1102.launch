@@ -6,7 +6,7 @@
 
   <param name="wheelbase" value="3.0"/>
   <param name="lookahead" value="4.5"/>
-  <param name="target_kmh" value="20.0"/>
+  <param name="target_kmh" value="15.0"/>
 
   <param name="obstacle_dist_thresh" value="2.5"/>
   <param name="min_points_to_block" value="3"/>

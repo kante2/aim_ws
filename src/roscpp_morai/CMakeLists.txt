@@ -67,6 +67,11 @@ target_compile_features(pp_1026 PRIVATE cxx_std_11)
 # Geographic(lib) 는 이 타깃(pp_1026)에서만 필요
 target_link_libraries(pp_1026 ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
 
+add_executable(pp_1026_noclass_test src/control/pp_1026_noclass_test.cpp)
+target_compile_features(pp_1026_noclass_test PRIVATE cxx_std_11)
+# Geographic(lib) 는 이 타깃(pp_1026_noclass_test)에서만 필요
+target_link_libraries(pp_1026_noclass_test ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+
 
 add_executable(path_visualizer src/path_visualizer.cpp)
 target_link_libraries(path_visualizer ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
@@ -99,3 +104,17 @@ target_link_libraries(obstacle_detector ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY
 # gap navigatior morai.cpp
 add_executable(gap_navigator_morai src/decision/gap_navigator_morai.cpp)
 target_link_libraries(gap_navigator_morai ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+
+# ----------------------------------------------------
+# stanely morai.cpp / 1105~1106
+# 실제 파일 경로에 맞춰서 수정
+add_executable(stanely_1105 src/control/stanely_1105.cpp)
+target_link_libraries(stanely_1105 ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+# (옵션) 메시지/생성물 의존성을 명시하고 싶다면:
+# add_dependencies(stanely_1105 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+
+# -----------------------------------------------------
+# pp + stanely
+add_executable(curvature_control src/control/curvature_control.cpp)
+target_link_libraries(curvature_control ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})

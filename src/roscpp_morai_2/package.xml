@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>roscpp_morai_2</name>
+  <version>0.0.1</version>
+  <description>Pure Pursuit / Stanley fusion controller (MORAI) with GeographicLib WGS84→ENU.</description>
+
+  <maintainer email="you@example.com">your_name</maintainer>
+  <license>BSD</license>
+
+  <!-- Build system -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- ROS deps (build + run) -->
+  <depend>roscpp</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf</depend>
+  <depend>morai_msgs</depend>
+
+  <!-- System deps (GeographicLib) -->
+  <!-- rosdep 키 이름: libgeographic-dev -->
+  <build_depend>libgeographic-dev</build_depend>
+  <exec_depend>libgeographic-dev</exec_depend>
+
+  <export>
+    <!-- 여기에 plugin 등 export가 있으면 추가 -->
+  </export>
+</package>

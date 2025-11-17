@@ -34,7 +34,7 @@ public:
 
     nh_.param<double>("wheelbase", wheelbase_L, 3.0);
     nh_.param<double>("lookahead", lfd_, 4.5);
-    nh_.param<double>("target_kmh", target_vel_kmh, 20.0);
+    nh_.param<double>("target_kmh", target_vel_kmh, 15.0);
 
     // ROI & 회피 파라미터
     nh_.param<double>("obstacle_dist_thresh", obstacle_dist_thresh_, 2.5); // m
