@@ -18,14 +18,6 @@
 #include <algorithm>
 #include <limits>
 
-/**
-
-문제점 --------------------------------------1118
-
-직선 구간에서 출렁임이 존재,, -> PID로 제어해야 할듯!
-
-*/
-
 // 곡률이 큰 상태에서는 -> stanley추종
 // 곡률이 작은 상태에서는 -> pure pursuit추종 (지금은 stanley만 실제 사용)
 
@@ -48,24 +40,27 @@ std::string g_ref_file, g_path_file;
 
 // 제어 파라미터
 double g_wheelbase_L = 3.0;       // [m]
-double g_lfd         = 4.5;       // [m] (기본 LD, 동적 LD 계산에 참고)
+double g_lfd         = 4.5;       // [m] (기본 LD, 동적 LD 계산에 참고로 쓸 수 있음)
 double g_target_vel  = 20.0;      // MORAI에 그대로 보낼 속도 (km/h라고 가정)
-double g_k_stanley   = 3.0;       // Stanley base gain
-double g_kappa_low   = 0.005;     // (현재는 사용 X, LD용으로 쓸 수도 있음)
+double g_k_stanley   = 3.0;       // Stanley gain
+double g_kappa_low   = 0.005;     // 사용은 안 하지만, 나중에 weight 바꿀 때 사용 가능
 double g_kappa_high  = 0.01;
 
 double lx = 0.0;
 double ly = 0.0;
 
-// ===== PID for lateral error (e_y) -> g_k_stanley를 동적으로 보정 =====
-double g_P = 0.3;   // 필요하면 튜닝
-double g_I = 0.0;   // 처음에는 0부터 시작 추천
-double g_D = 0.1;   // D로 출렁임 억제
+// --- 횡오차 기반 PID + 스티어 스무딩용 전역 ---
+double g_e_y       = 0.0;        // Stanley 안에서 업데이트되는 현재 횡오차
+double g_ey_prev   = 0.0;
+double g_ey_int    = 0.0;
+ros::Time g_prev_time;
 
-double g_lat_int       = 0.0;   // 적분값
-double g_lat_prev_err  = 0.0;   // 이전 e_y
-double g_lat_prev_time = 0.0;   // 이전 시각 (sec)
-
+double g_Kp_lat      = 0.3;
+double g_Ki_lat      = 0.0;
+double g_Kd_lat      = 0.02;
+double g_alpha_steer = 0.3;      // steering low-pass
+double g_max_steer   = 0.6;      // [rad]
+double g_delta_prev  = 0.0;      // 이전 스티어 값 (스무딩용)
 
 // -------------------- 로더 --------------------
 bool loadOrigin(const std::string &file) {
@@ -171,8 +166,8 @@ double compute_CurvatureAtIndex(int i) {
 double compute_dynamic_ld_with_curvature(double curvature_abs)
 {
   // 곡률이 클수록 LD 작게, 직선에 가까울수록 LD 크게
-  const double ld_min = 3.5;   // 급커브일 때 LD
-  const double ld_max = 8.5;   // 직선일 때 LD
+  const double ld_min = 3.0;   // 급커브일 때 LD
+  const double ld_max = 8.0;   // 직선일 때 LD
 
   const double c_min = 0.0009;
   const double c_max = 0.05;
@@ -213,45 +208,14 @@ int findIndexWithLD(int nearest_idx, double ld)
   return nearest_idx;
 }
 
-// ----------------- PID: e_y 기반으로 g_k_stanley 보정 -----------------
-double compute_PID(double e_y)
-{
-  double now = ros::Time::now().toSec();
-  if (g_lat_prev_time == 0.0) {
-    g_lat_prev_time = now;
-  }
-
-  double dt = now - g_lat_prev_time;
-
-  if (dt <= 0.0 || dt >= 0.5) {
-    // 타이밍 깨졌으면 적분/미분 리셋
-    dt = 0.02; // 50 Hz 기준
-    g_lat_int      = 0.0;
-    g_lat_prev_err = e_y;
-  }
-
-  double err = e_y;
-
-  // 적분항
-  g_lat_int += err * dt;
-  // anti-windup 간단 제한
-  double int_max = 1.0;
-  if (g_lat_int >  int_max) g_lat_int =  int_max;
-  if (g_lat_int < -int_max) g_lat_int = -int_max;
-
-  double d_err = (err - g_lat_prev_err) / dt;
-
-  // PID 출력: "k 보정값"으로 쓸 예정
-  double k_corr = g_P * err + g_I * g_lat_int + g_D * d_err;
-
-  g_lat_prev_err  = err;
-  g_lat_prev_time = now;
-
-  return k_corr;
+// ----------------- 제어부 compute 함수 -----------------
+double compute_PurePursuitSteering(double lx, double ly, double ld) {
+  const double theta = std::atan2(ly, lx);
+  const double delta = std::atan2(2.0 * g_wheelbase_L * std::sin(theta), ld);
+  return delta;
 }
 
-// ----------------- Stanley + PID(g_k_stanley) -----------------
-double compute_StanleySteering(int idx) {
+double compute_StanleySteering(int idx) { // <- 여기서는 "recent/nearest idx" 사용 권장
   int N = static_cast<int>(g_path_xy.size());
   if (N < 2 || idx < 0 || idx >= N) {
     return 0.0;
@@ -264,10 +228,11 @@ double compute_StanleySteering(int idx) {
   double dx_n = g_path_xy[idx].first  - g_enu_x;
   double dy_n = g_path_xy[idx].second - g_enu_y;
 
-  // double x_local_n =  cos_y * dx_n + sin_y * dy_n;  // 전방 (+x) (필요하면 사용)
+  double x_local_n =  cos_y * dx_n + sin_y * dy_n;  // 전방 (+x)
   double y_local_n = -sin_y * dx_n + cos_y * dy_n;  // 좌측 (+y)
 
-  double e_y = y_local_n; // 횡 오차 에러
+  double e_y = y_local_n;
+  g_e_y = e_y;   // PID에서 쓸 수 있도록 전역에 저장
 
   // === 2) 경로 진행 방향 psi_path 계산 ===
   int idx2;
@@ -283,27 +248,13 @@ double compute_StanleySteering(int idx) {
   double psi_path = std::atan2(dy_tan, dx_tan);
 
   // === 3) 헤딩 오차 psi_err ===
-  double psi_err = compute_WrapAngle(psi_path - g_yaw); 
-  
-  // === 4) 속도 보정 (v가 너무 작으면 발산 방지) ===
+  double psi_err = compute_WrapAngle(psi_path - g_yaw);
+
+  // === 4) Stanley 조향각 ===
   double v = g_ego_speed_ms;      // [m/s]
   if (std::fabs(v) < 0.1) v = 0.1;
 
-  // === 5) PID로 g_k_stanley 보정 ===
-  double k_corr = compute_PID(e_y);          // e_y 기반 k 보정값
-  double k_eff  = g_k_stanley + k_corr;      // 실제 사용되는 gain
-
-  // k_eff가 말도 안 되게 되지 않도록 제한
-  double k_min = 0.5;
-  double k_max = 8.0;
-  if (k_eff < k_min) k_eff = k_min;
-  if (k_eff > k_max) k_eff = k_max;
-
-  ROS_INFO_THROTTLE(0.5, "[stanley_pid] e_y=%.3f  k_eff=%.3f (base=%.3f, corr=%.3f)", 
-                    e_y, k_eff, g_k_stanley, k_corr);
-
-  // === 6) Stanley 조향각 (PID로 보정된 k_eff 사용) ===
-  double delta = psi_err + std::atan2(k_eff * e_y, v);
+  double delta = psi_err + std::atan2(g_k_stanley * e_y, v);
   return delta;
 }
 
@@ -347,6 +298,13 @@ int main(int argc, char **argv) {
   nh.param<double>("lookahead",  g_lfd,        4.5);
   nh.param<double>("target_kmh", g_target_vel, 16.0);
 
+  // PID/스무딩 파라미터 (필요시 yaml에서 튜닝)
+  nh.param<double>("Kp_lat",        g_Kp_lat,      0.1);
+  nh.param<double>("Ki_lat",        g_Ki_lat,      0.0);
+  nh.param<double>("Kd_lat",        g_Kd_lat,      0.02);
+  nh.param<double>("steer_alpha",   g_alpha_steer, 0.3);
+  nh.param<double>("max_steer_rad", g_max_steer,   0.6);
+
   // 경로/원점 로딩
   if (!loadOrigin(g_ref_file)) {
     ROS_WARN("[pp_fixed] Origin not loaded. GPS -> ENU 변환 불가.");
@@ -356,9 +314,9 @@ int main(int argc, char **argv) {
   }
 
   // Sub
-  ros::Subscriber ego_sub = nh.subscribe("/Ego_topic", 20, egoCB);
-  ros::Subscriber gps_sub = nh.subscribe("/gps",       10, gpsCB);
-  ros::Subscriber imu_sub = nh.subscribe("/imu",       10, imuCB);
+  ros::Subscriber ego_sub = nh.subscribe("/Ego_topic", 1, egoCB);
+  ros::Subscriber gps_sub = nh.subscribe("/gps",       1, gpsCB);
+  ros::Subscriber imu_sub = nh.subscribe("/imu",       1, imuCB);
 
   // Pub
   cmd_pub = nh.advertise<morai_msgs::CtrlCmd>("/ctrl_cmd", 2);
@@ -379,7 +337,7 @@ int main(int argc, char **argv) {
       continue;
     }
 
-    // 1) 최근접 인덱스
+    // 1) 최근접 인덱스 (Stanley는 이 인덱스 기준으로 사용)
     int nearest_idx = compute_findNearestIdx(g_enu_x, g_enu_y);
     if (nearest_idx < 0) {
       publishStop();
@@ -387,7 +345,7 @@ int main(int argc, char **argv) {
       continue;
     }
 
-    // 2) 곡률 계산
+    // 2) 곡률 계산 (최근접 기준)
     double curvature     = compute_CurvatureAtIndex(nearest_idx);
     double curvature_abs = std::fabs(curvature);
 
@@ -395,18 +353,18 @@ int main(int argc, char **argv) {
     double dynamic_ld = compute_dynamic_ld_with_curvature(curvature_abs);
     ROS_INFO_THROTTLE(1.0, "[pp_fixed] kappa=%.5f | ld=%.2f", curvature, dynamic_ld);
 
-    // 4) LD를 만족하는 인덱스 선택
+    // 4) LD를 만족하는 인덱스 선택 (Pure Pursuit용 타겟)
     int ld_idx = findIndexWithLD(nearest_idx, dynamic_ld);
 
-    // 5) 타겟점 (차량 좌표계) -> 지금은 사용 안 해도 됨 (Stanley만 사용)
-    double c = std::cos(g_yaw);
-    double s = std::sin(g_yaw);
+    // 5) Pure Pursuit용 타겟점 (차량 좌표계)
+    double cos = std::cos(g_yaw);
+    double sin = std::sin(g_yaw);
 
     double dx = g_path_xy[ld_idx].first  - g_enu_x;
     double dy = g_path_xy[ld_idx].second - g_enu_y;
 
-    lx =  c * dx + s * dy;   // 전방(+x)
-    ly = -s * dx + c * dy;   // 좌측(+y)
+    lx =  cos * dx + sin * dy;   // 전방(+x)
+    ly = -sin * dx + cos * dy;   // 좌측(+y)
 
     if (lx <= 0.0) {
       // 타겟이 뒤쪽이면 정지
@@ -415,11 +373,40 @@ int main(int argc, char **argv) {
       continue;
     }
 
-    // 6) 스티어링 계산 (Stanley + PID(g_k_stanley))
-    double delta_stanley = compute_StanleySteering(ld_idx);
+    // 6) 스티어링 계산
+    //    - Stanley는 "현재 내 위치 근처(nearest_idx)"를 기준으로
+    //      e_y, psi_err를 계산
+    double delta_stanley = compute_StanleySteering(nearest_idx);
 
-    double delta = delta_stanley;
+    // --- PID (횡오차 g_e_y에 대한 PD 제어) ---
+    ros::Time now = ros::Time::now();
+    double dt;
+    if (g_prev_time.isZero()) {
+      dt = 0.02;
+    } else {
+      dt = (now - g_prev_time).toSec();
+      if (dt <= 0.0) dt = 0.02;
+    }
+    g_prev_time = now;
 
+    double de = (g_e_y - g_ey_prev) / dt;
+    g_ey_prev = g_e_y;
+    g_ey_int += g_e_y * dt;
+
+    double delta_pid = g_Kp_lat * g_e_y + g_Ki_lat * g_ey_int + g_Kd_lat * de;
+
+    // Stanley + PID를 합친 "원시 조향"
+    double delta_raw = delta_stanley + delta_pid;
+
+    // --- 스티어 스무딩 (저역 통과 필터) ---
+    double delta = g_alpha_steer * delta_raw + (1.0 - g_alpha_steer) * g_delta_prev;
+    g_delta_prev = delta;
+
+    // --- 조향 제한 ---
+    if (delta >  g_max_steer) delta =  g_max_steer;
+    if (delta < -g_max_steer) delta = -g_max_steer;
+
+    // 지금은 Stanley(+PID+LPF)만 사용 (나중에 PP와 weight fusion 가능)
     g_cmd.steering = delta;
     g_cmd.velocity = g_target_vel;   // km/h라고 가정
 

@@ -293,9 +293,9 @@ int main(int argc, char **argv) {
   }
 
   // Sub
-  ros::Subscriber ego_sub = nh.subscribe("/Ego_topic", 20, egoCB);
-  ros::Subscriber gps_sub = nh.subscribe("/gps",       10, gpsCB);
-  ros::Subscriber imu_sub = nh.subscribe("/imu",       10, imuCB);
+  ros::Subscriber ego_sub = nh.subscribe("/Ego_topic", 1, egoCB);
+  ros::Subscriber gps_sub = nh.subscribe("/gps",       1, gpsCB);
+  ros::Subscriber imu_sub = nh.subscribe("/imu",       1, imuCB);
 
   // Pub
   cmd_pub = nh.advertise<morai_msgs::CtrlCmd>("/ctrl_cmd", 2);
@@ -336,14 +336,14 @@ int main(int argc, char **argv) {
     int ld_idx = findIndexWithLD(nearest_idx, dynamic_ld);
 
     // 5) Pure Pursuit용 타겟점 (차량 좌표계)
-    double c = std::cos(g_yaw);
-    double s = std::sin(g_yaw);
+    double cos = std::cos(g_yaw);
+    double sin = std::sin(g_yaw);
 
     double dx = g_path_xy[ld_idx].first  - g_enu_x;
     double dy = g_path_xy[ld_idx].second - g_enu_y;
 
-    lx =  c * dx + s * dy;   // 전방(+x)
-    ly = -s * dx + c * dy;   // 좌측(+y)
+    lx =  cos * dx + sin * dy;   // 전방(+x)
+    ly = -sin * dx + cos * dy;   // 좌측(+y)
 
     if (lx <= 0.0) {
       // 타겟이 뒤쪽이면 정지
