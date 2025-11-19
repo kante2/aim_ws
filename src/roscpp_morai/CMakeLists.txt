@@ -100,6 +100,9 @@ add_dependencies(convert_lidar_kante ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catki
 add_executable(obstacle_detector src/perception/obstace_detector.cpp)
 target_link_libraries(obstacle_detector ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
 
+add_executable(pp_fixed_speed src/decision/pp_fixed_speed.cpp)
+target_link_libraries(pp_fixed_speed ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+
 # ----------------------------------------------------
 # gap navigatior morai.cpp
 add_executable(gap_navigator_morai src/decision/gap_navigator_morai.cpp)
@@ -125,3 +128,8 @@ target_link_libraries(curvature_control_ver2 ${catkin_LIBRARIES} ${GEOGRAPHIC_LI
 
 add_executable(curvature_control_verPID src/control/curvature_control_verPID.cpp)
 target_link_libraries(curvature_control_verPID ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+
+# ----------------------------------------
+# 차량비전
+add_executable(navigator_avoidance_with_lidar src/decision/navigator_avoidance_with_lidar.cpp)
+target_link_libraries(navigator_avoidance_with_lidar ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})

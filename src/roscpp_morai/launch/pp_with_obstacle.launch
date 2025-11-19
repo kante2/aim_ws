@@ -24,6 +24,7 @@
     <param name="avoid_kmh"  value="8.0"/>
     <param name="flag_topic" value="/avoid_flag"/>
   </node>
+  
     <!-- convert lidar 노드 -->
   <node pkg="roscpp_morai" type="convert_lidar_kante" name="convert_lidar_kante" output="screen">
   </node>
