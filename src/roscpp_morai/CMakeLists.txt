@@ -116,5 +116,12 @@ target_link_libraries(stanely_1105 ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
 
 # -----------------------------------------------------
 # pp + stanely
-add_executable(curvature_control src/control/curvature_control.cpp)
-target_link_libraries(curvature_control ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+#add_executable(curvature_control src/control/curvature_control.cpp)
+#target_link_libraries(curvature_control ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+
+add_executable(curvature_control_ver2 src/control/curvature_control_ver2.cpp)
+target_link_libraries(curvature_control_ver2 ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+
+
+add_executable(curvature_control_verPID src/control/curvature_control_verPID.cpp)
+target_link_libraries(curvature_control_verPID ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
