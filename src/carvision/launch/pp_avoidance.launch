@@ -13,14 +13,12 @@
     <!-- 회피 기준 (바운딩박스 높이 %, x 위치) -->
     <param name="avoid_height_thresh" value="30.0"/>
     <param name="avoid_x_thresh"      value="350.0"/>
+    <param name="bbox_left_thresh"    value="290.0"/>
 
   </node>
 
   <!-- Pure Pursuit + 카메라 기반 회피 노드 (C++) -->
-  <node pkg="carvision"
-        type="avoid_camera_car"
-        name="avoid_camera_car"
-        output="screen">
+  <node pkg="carvision" type="avoid_camera_car" name="avoid_camera_car" output="screen">
 
     <!-- 경로/PP 설정 -->
     <param name="ref_file"   value="/root/ws/src/carvision/map/ref.txt"/>

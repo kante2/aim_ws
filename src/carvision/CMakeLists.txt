@@ -27,6 +27,11 @@ if(NOT GEOGRAPHIC_INCLUDE_DIR OR NOT GEOGRAPHIC_LIBRARY)
 endif()
 
 ## -----------------------------------------------------------------------------
+## OpenCV (YOLO DNN)
+## -----------------------------------------------------------------------------
+find_package(OpenCV REQUIRED)
+
+## -----------------------------------------------------------------------------
 ## Catkin package
 ## -----------------------------------------------------------------------------
 catkin_package(
@@ -39,6 +44,7 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS}
   ${GEOGRAPHIC_INCLUDE_DIR}   # /usr/include 등
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## -----------------------------------------------------------------------------
@@ -66,7 +72,7 @@ add_executable(obstacle_detector_car src/perception/obstacle_detector_car.cpp)
 target_compile_features(obstacle_detector_car PRIVATE cxx_std_11)
 target_link_libraries(obstacle_detector_car
   ${catkin_LIBRARIES}
-  ${GEOGRAPHIC_LIBRARY}
+  ${OpenCV_LIBRARIES}
 )
 
 #

@@ -60,16 +60,15 @@ bool avoid_first_step_hard_right_ = false;
 
 // ================= YOLO 기반 회피용 전역 =================
 // /yolo/bbox_x, /yolo/bbox_height_ratio 구독해서 저장
-double bbox_x_             = 0.0;
-double bbox_height_ratio_  = 0.0;
-bool   has_bbox_info_      = false;
-bool   bbox_detected_recently_ = false;
-ros::Time last_bbox_detect_time_;
+double bbox_x_            = 0.0;
+double bbox_height_ratio_ = 0.0;
+bool   has_bbox_info_     = false;
+bool   yolo_avoid_active_ = false;
 
-// 조건: 높이 >= 30% & x > 350 이면 회피
+// 조건: 높이 >= 30% & 위치 임계값 넘으면 회피
 double bbox_height_thresh_ = 30.0;
-double bbox_x_thresh_      = 350.0;
-double bbox_clear_delay_sec_ = 2.0;  // 박스 사라진 뒤 추종으로 돌아올 지연
+double bbox_x_thresh_      = 350.0;  // 오른쪽 장애물 판단 기준
+double bbox_left_thresh_   = 290.0;  // 왼쪽 장애물 판단 기준
 
 // ======================== 유틸/파일 로드 ========================
 
@@ -243,7 +242,7 @@ int main(int argc, char **argv) {
   // (원하면 YOLO 조건도 파라미터화 가능)
   pnh.param<double>("bbox_height_thresh", bbox_height_thresh_, 24.0);
   pnh.param<double>("bbox_x_thresh",      bbox_x_thresh_,      340.0);
-  pnh.param<double>("bbox_clear_delay_sec", bbox_clear_delay_sec_, 2.0);
+  pnh.param<double>("bbox_left_thresh",   bbox_left_thresh_,   300.0);
 
   // ---- ENU 원점/경로 로드 ----
   if (!loadOrigin(ref_file_)) {
@@ -300,52 +299,40 @@ int main(int argc, char **argv) {
     }
 
     // ================= YOLO 기반 회피 조건 체크 =================
-    // 조건: 바운딩박스 높이 >= 30% && 중심 x > 350 → 회피
-    const bool bbox_trigger =
+    // 조건: 바운딩박스 높이 >= 30% && 위치 임계값 초과 → 회피
+    const bool right_obstacle_trigger =
         has_bbox_info_ &&
         bbox_height_ratio_ >= bbox_height_thresh_ &&
         bbox_x_ > bbox_x_thresh_;
+    const bool left_obstacle_trigger =
+        has_bbox_info_ &&
+        bbox_height_ratio_ >= bbox_height_thresh_ &&
+        bbox_x_ < bbox_left_thresh_;
 
-    if (bbox_trigger) {
-      last_bbox_detect_time_ = ros::Time::now();
-      bbox_detected_recently_ = true;
-
+    if (right_obstacle_trigger) {
       if (mode_ != Mode::AVOID_LEFT) {
-        ROS_INFO("[pp_fixed] YOLO AVOID TRIGGER: x=%.1f, h=%.1f%%  -> AVOID_LEFT",
+        ROS_INFO("[pp_fixed] YOLO AVOID_LEFT TRIGGER (right obstacle): x=%.1f, h=%.1f%%",
                  bbox_x_, bbox_height_ratio_);
       }
       mode_ = Mode::AVOID_LEFT;  // 오른쪽에 큰 물체 → 왼쪽 회피
+      yolo_avoid_active_ = true;
 
+    } else if (left_obstacle_trigger) {
+      if (mode_ != Mode::AVOID_RIGHT) {
+        ROS_INFO("[pp_fixed] YOLO AVOID_RIGHT TRIGGER (left obstacle): x=%.1f, h=%.1f%%",
+                 bbox_x_, bbox_height_ratio_);
+      }
+      mode_ = Mode::AVOID_RIGHT;  // 왼쪽 장애물 → 오른쪽 회피
+      yolo_avoid_active_ = true;
+
+    } else if (yolo_avoid_active_) {
+      ROS_INFO("[pp_fixed] YOLO AVOID CLEARED -> TRACK_WAYPOINT");
+      mode_ = Mode::TRACK_WAYPOINT;
+      yolo_avoid_active_ = false;
     } else {
-      if (mode_ == Mode::AVOID_LEFT) {
-        bool can_clear = true;
-        if (bbox_detected_recently_) {
-          const double elapsed =
-              (ros::Time::now() - last_bbox_detect_time_).toSec();
-          if (elapsed < bbox_clear_delay_sec_) {
-            can_clear = false;
-          } else {
-            bbox_detected_recently_ = false;
-          }
-        }
-
-        if (can_clear) {
-          ROS_INFO("[pp_fixed] YOLO AVOID CLEARED (delay %.1fs): x=%.1f, h=%.1f%%  -> TRACK_WAYPOINT",
-                   bbox_clear_delay_sec_, bbox_x_, bbox_height_ratio_);
-          mode_ = Mode::TRACK_WAYPOINT;
-        } else {
-          // 아직 지연 시간 내 → 회피 계속 유지
-          ROS_INFO_THROTTLE(1.0,
-                            "[pp_fixed] YOLO AVOID waiting %.1fs more",
-                            bbox_clear_delay_sec_ -
-                              (ros::Time::now() - last_bbox_detect_time_).toSec());
-        }
-      } else {
-        // LiDAR 플래그를 쓰고 싶으면 여기에서 flagCB에 의해 변경된 mode_를 유지하도록
-        // 로직을 더 섞을 수 있지만, 지금은 YOLO 기준으로 TRACK/AVOID 결정
-        if (mode_ != Mode::AVOID_RIGHT) {
-          mode_ = Mode::TRACK_WAYPOINT;
-        }
+      // LiDAR 플래그 등을 사용 중이라면 그 상태를 유지
+      if (mode_ != Mode::AVOID_RIGHT) {
+        mode_ = Mode::TRACK_WAYPOINT;
       }
     }
 
