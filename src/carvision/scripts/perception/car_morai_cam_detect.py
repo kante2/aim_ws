@@ -23,6 +23,11 @@ class YoloLaneDetectorNode:
         # 회피 기준도 파라미터로 뺌 (기본: 높이 30%, x > 350)
         self.avoid_height_thresh = rospy.get_param("~avoid_height_thresh", 28.0)
         self.avoid_x_thresh      = rospy.get_param("~avoid_x_thresh", 330.0)
+        # YOLO 클래스 필터 (COCO에서 'car'는 2). 빈 리스트면 전체 사용.
+        target_cls_default = [2]
+        self.target_class_ids = set(rospy.get_param("~target_class_ids", target_cls_default))
+        rospy.loginfo("[YOLO] target classes: %s",
+                      sorted(self.target_class_ids) if self.target_class_ids else "ALL")
 
         self.bridge = CvBridge()
         rospy.loginfo("[YOLO] loading model: %s", self.model_path)
@@ -76,6 +81,10 @@ class YoloLaneDetectorNode:
             cls_id = int(box.cls[0])
             conf = float(box.conf[0])
 
+            # 필요 클래스만 통과시켜서 엉뚱한 물체로 회피가 켜지는 걸 방지
+            if self.target_class_ids and cls_id not in self.target_class_ids:
+                continue
+
             # ======== 시각화 =========
             # 바운딩 박스
             cv2.rectangle(vis, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -105,6 +114,10 @@ class YoloLaneDetectorNode:
         if main_cx is not None and main_h_ratio is not None:
             self.pub_x.publish(Float32(data=float(main_cx)))
             self.pub_height.publish(Float32(data=float(main_h_ratio)))
+        else:
+            # 검출이 없을 때도 값을 내보내 주어 C++ 노드가 즉시 회피 해제 가능
+            self.pub_x.publish(Float32(data=-1.0))
+            self.pub_height.publish(Float32(data=0.0))
 
         # ======== 회피 조건 체크 & 경고 시각화 ========
         avoid_triggered = False

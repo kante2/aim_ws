@@ -1,18 +1,19 @@
 <launch>
   <!-- YOLO 카메라 감지 노드 (Python) -->
-  <node pkg="carvision"
-        type="perception/car_morai_cam_detect.py"
-        name="car_morai_cam_detect"
-        output="screen">
+  <!-- type must be the executable's basename so roslaunch can resolve it -->
+  <node pkg="carvision" type="car_morai_cam_detect.py" name="car_morai_cam_detect" output="screen">
 
     <!-- 카메라 이미지 토픽 (MORAI) -->
     <param name="camera_topic" value="/image_jpeg/compressed"/>
-    <!-- YOLO weight 경로 -->
-    <param name="model_path"   value="/root/ws/src/yolo/best.pt"/>
+    <!-- YOLO weight 경로: 기본 COCO car 모델 -->
+    <param name="model_path"   value="$(find carvision)/scripts/perception/yolov8n.pt"/>
+    <!-- 필요한 클래스만 감지 (COCO에서 car=2) -->
+    <rosparam param="target_class_ids">[2]</rosparam>
 
     <!-- 회피 기준 (바운딩박스 높이 %, x 위치) -->
     <param name="avoid_height_thresh" value="30.0"/>
     <param name="avoid_x_thresh"      value="350.0"/>
+
   </node>
 
   <!-- Pure Pursuit + 카메라 기반 회피 노드 (C++) -->
