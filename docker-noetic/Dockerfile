@@ -26,7 +26,7 @@ RUN echo "source /opt/ros/noetic/setup.bash" >> /root/.bashrc && \
     echo "export LC_ALL=en_US.UTF-8" >> /root/.bashrc
 
 # 워크스페이스(호스트에서 마운트 예정)
-WORKDIR /root/ws
+WORKDIR /root/aim_ws
 
 # X11 공유메모리 이슈 회피
 ENV QT_X11_NO_MITSHM=1

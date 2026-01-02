@@ -1,9 +1,0 @@
-<!-- launch/record_pp.launch -->
-<launch>
-  <arg name="bag_dir" default="$(find roscpp_morai)/rosbag"/>
-  <node pkg="rosbag" type="record" name="record_pp" output="screen"
-        args="-O $(arg bag_dir)/drive_$(env HOSTNAME)_$(env USER)_$(env ROS_DISTRO)_$(env DATE).bag
-              /Ego_topic /local_path /ctrl_cmd /global_path /tf /tf_static">
-    <env name="DATE" value="$(eval strftime('%Y%m%d_%H%M%S'))"/>
-  </node>
-</launch>

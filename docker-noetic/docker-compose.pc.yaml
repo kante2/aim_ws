@@ -26,7 +26,7 @@ services:
 
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${HOME}/aim_ws:/root/ws:rw
+      - ${HOME}/aim_ws:/root/aim_ws:rw
       - /etc/localtime:/etc/localtime:ro
       - /home/kante/Downloads/MoraiLauncher_Lin:/mnt/MoraiLauncher_Lin:ro
       # Wayland 소켓(선택, Ubuntu 기본이 Wayland면 추천)

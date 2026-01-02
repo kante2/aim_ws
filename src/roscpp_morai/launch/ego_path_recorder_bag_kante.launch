@@ -1,6 +1,0 @@
-<launch>
-  <node pkg="roscpp_morai" type="ego_path_recorder_bag_kante" name="ego_path_recorder_bag_kante" output="screen">
-    <!-- <param name="bag_file" value="/root/ws/src/roscpp_morai/rosbag/ego.bag"/> -->
-    <param name="bag_file" value="/home/autonav/aim_ws/src/roscpp_morai/rosbag/ego.bag"/>
-  </node>
-</launch>
