@@ -19,3 +19,4 @@ __pycache__/
 !src/parkie_morai/**
 !src/geometry2/**
 !src/cartographer/**
+!src/lattice_planner/**
