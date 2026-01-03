@@ -1,8 +1,7 @@
-#include "hybrid.hpp"
+#include "hybrid_function.hpp"
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 #include <ros/package.h>
-
 using namespace std;
 
 void gpsCallback(const morai_msgs::GPSMessage::ConstPtr& msg) {
@@ -54,20 +53,25 @@ int main(int argc, char** argv) {
     std::string pkg = ros::package::getPath("roscpp_morai");
     std::string yaml_file = pkg + "/config/yaml_hybrid.yaml";
 
-    if (!load_Params(yaml_file)) { // 야뮬파일 체크
-        ROS_ERROR("Failed to load YAML parameters.");
+    // Load YAML parameters first
+    if (!load_Params(yaml_file)) {
+        ROS_FATAL("Failed to load YAML parameters!");
         return -1;
     }
-    if (!load_Path_ref()) { //경로랑 기준점 잘 불러왓는지 체크
-        ROS_FATAL("Failed to load path files.");
+    
+    // Load path and reference point
+    if (!load_Path_ref()) {
+        ROS_FATAL("Failed to load path and reference files!");
         return -1;
     }
+    
+    // Preprocess curvature
     preprocessCurvature();
     
-    cmd_pub = nh.advertise<morai_msgs::CtrlCmd>("/ctrl_cmd_0", 10);
-    ros::Subscriber gps_sub = nh.subscribe("/gps", 50, gpsCallback);
-    ros::Subscriber imu_sub = nh.subscribe("/imu", 50, imuCallback);
-    ros::Subscriber ego_sub = nh.subscribe("/Ego_topic", 50, egoCallback);
+    cmd_pub = nh.advertise<morai_msgs::CtrlCmd>("/ctrl_cmd_0", 1);
+    ros::Subscriber gps_sub = nh.subscribe("/gps", 1, gpsCallback);
+    ros::Subscriber imu_sub = nh.subscribe("/imu", 1, imuCallback);
+    ros::Subscriber ego_sub = nh.subscribe("/Ego_topic", 1, egoCallback);
     ros::Timer timer = nh.createTimer(ros::Duration(0.02), controlLoop);
 
     ros::spin();

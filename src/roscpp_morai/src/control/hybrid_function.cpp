@@ -1,4 +1,4 @@
-#include "hybrid.hpp"
+#include "hybrid_function.hpp"
 #include <morai_msgs/CtrlCmd.h>
 #include <cmath>
 #include <ros/ros.h>
@@ -129,7 +129,7 @@ bool load_Path_ref(){ //경로,기준점 체크 함수
     }
     ref_file >> lat0 >> lon0 >> h0;
     ref_file.close();
-    // wgs84ToECEF(lat0, lon0, h0, x0_ecef, y0_ecef, z0_ecef);
+    wgs84ToECEF(lat0, lon0, h0, x0_ecef, y0_ecef, z0_ecef);
 
     ROS_INFO("Opening path file: %s", path_file_name.c_str());
     ifstream path_file(path_file_name);
@@ -138,31 +138,38 @@ bool load_Path_ref(){ //경로,기준점 체크 함수
         return false;
     }
 
-    // --- 수정한 코드 (CSV 쉼표 기반 읽기) ---
+    // --- Parse CSV (space or comma separated) ---
     string line;
     while (getline(path_file, line)) {
         if (line.empty()) continue;
         
         stringstream ss(line);
-        string val;
-        vector<double> row;
-
-        // 쉼표(,)를 구분자로 한 줄에서 데이터를 분리하여 row에 저장
-        while (getline(ss, val, ',')) {
-            // 공백 제거
-            val.erase(0, val.find_first_not_of(" \t\r\n"));
-            val.erase(val.find_last_not_of(" \t\r\n") + 1);
+        double x, y, z;
+        
+        // Try space-separated format first
+        if (ss >> x >> y >> z) {
+            waypoints.push_back({x, y});
+        } else {
+            // Try comma-separated format
+            ss.clear();
+            ss.str(line);
+            string val;
+            vector<double> row;
             
-            try {
-                row.push_back(stod(val));
-            } catch (...) {
-                continue; // 숫자가 아닌 데이터(헤더 등) 방어
+            while (getline(ss, val, ',')) {
+                val.erase(0, val.find_first_not_of(" \t\r\n"));
+                val.erase(val.find_last_not_of(" \t\r\n") + 1);
+                
+                try {
+                    row.push_back(stod(val));
+                } catch (...) {
+                    continue;
+                }
             }
-        }
-
-        // x, y 좌표가 정상적으로 존재할 때만 추가
-        if (row.size() >= 2) {
-            waypoints.push_back({row[0], row[1]});
+            
+            if (row.size() >= 2) {
+                waypoints.push_back({row[0], row[1]});
+            }
         }
     }
     // ------------------------------------
@@ -334,11 +341,19 @@ void getTargetSpeed(double max_curvature, double& out_target_vel){
 }
 
 void getsteering(const VehicleState& ego, ControlData& ctrl){
-    double path_e = lateralPathError(ctrl.target_idx,ego.x,ego.y);
-    double heading_e = headingError(ego.yaw, ctrl.target_idx); //호출
-    double v = std::max(1.0, ego.vel); //출발직전에 속도0 최소 속도 1보장
-    ctrl.steering = (heading_e + atan(k_gain*path_e/v));
-
+    double path_e = lateralPathError(ctrl.target_idx, ego.x, ego.y);
+    double heading_e = headingError(ego.yaw, ctrl.target_idx);
+    double v = std::max(1.0, ego.vel);
+    
+    // Stanley steering control with limits
+    double steering_raw = heading_e + atan(k_gain * path_e / v);
+    
+    // Limit steering angle to ±30 degrees (±0.524 radians)
+    const double MAX_STEERING = 30.0 * M_PI / 180.0;  // 30 degrees
+    ctrl.steering = std::max(-MAX_STEERING, std::min(MAX_STEERING, steering_raw));
+    
+    ROS_INFO("[Steering] path_e: %.3f, heading_e: %.3f, raw: %.3f, limited: %.3f deg",
+             path_e, heading_e, steering_raw, ctrl.steering * 180.0 / M_PI);
 }
 
 void computePID(double vel,double target_vel,double& out_accel, double& out_brake){

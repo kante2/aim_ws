@@ -76,10 +76,17 @@ add_executable(obstacle_detector src/perception/obstace_detector.cpp)
 target_link_libraries(obstacle_detector ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
 
 # ----------------------------------------
+# Path Recorder (GPS to CSV in ENU coordinates using GeographicLib)
+add_executable(path_recorder src/control/gps_enu_path_recorder.cpp)
+target_compile_features(path_recorder PRIVATE cxx_std_11)
+target_link_libraries(path_recorder ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+add_dependencies(path_recorder ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+# ----------------------------------------
 # Hybrid controller (refactored with reference structure)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(YAML_CPP yaml-cpp)
-add_executable(hybrid src/control/hybrid.cpp src/control/hybrid_function.cpp)
+add_executable(hybrid src/control/hybrid_control_node.cpp src/control/hybrid_function.cpp)
 target_include_directories(hybrid PRIVATE src/control)
 target_compile_features(hybrid PRIVATE cxx_std_11)
 target_link_libraries(hybrid ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY} ${YAML_CPP_LIBRARIES})
