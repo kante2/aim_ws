@@ -12,6 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
   morai_msgs
   rosbag
   tf
+  tf2_ros
+  tf2_sensor_msgs
 )
 
 ## -----------------------------------------------------------------------------
@@ -100,3 +102,19 @@ target_compile_features(cluster_car_detection PRIVATE cxx_std_11)
 target_link_libraries(cluster_car_detection ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_include_directories(cluster_car_detection PRIVATE ${PCL_INCLUDE_DIRS})
 add_dependencies(cluster_car_detection ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+# ----------------------------------------
+# LIDAR AABB Costmap Node (with RANSAC ground filtering and clustering)
+add_executable(lidar_aabb_costmap_node src/perception/lidar/lidar_aabb_costmap_node.cpp)
+target_compile_features(lidar_aabb_costmap_node PRIVATE cxx_std_11)
+target_link_libraries(lidar_aabb_costmap_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+target_include_directories(lidar_aabb_costmap_node PRIVATE ${PCL_INCLUDE_DIRS})
+add_dependencies(lidar_aabb_costmap_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+# ----------------------------------------
+# LIDAR AABB Costmap Node Ver2 (alternative version)
+add_executable(lidar_aabb_ver2 src/perception/lidar/lidar_aabb_ver2.cpp)
+target_compile_features(lidar_aabb_ver2 PRIVATE cxx_std_11)
+target_link_libraries(lidar_aabb_ver2 ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+target_include_directories(lidar_aabb_ver2 PRIVATE ${PCL_INCLUDE_DIRS})
+add_dependencies(lidar_aabb_ver2 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

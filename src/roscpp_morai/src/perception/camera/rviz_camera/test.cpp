@@ -1,3 +1,0 @@
-/*
-camera test file
-*/
