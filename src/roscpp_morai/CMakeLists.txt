@@ -68,12 +68,12 @@ include_directories(
 # ======================================
 # AVAILABLE TARGETS (files that exist)
 # ======================================
-add_executable(convert_lidar_kante src/perception/convert_lidar_kante.cpp)
-target_link_libraries(convert_lidar_kante ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
-add_dependencies(convert_lidar_kante ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_executable(convert_lidar_kante src/perception/convert_lidar_kante.cpp)
+# target_link_libraries(convert_lidar_kante ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+# add_dependencies(convert_lidar_kante ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(obstacle_detector src/perception/obstace_detector.cpp)
-target_link_libraries(obstacle_detector ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
+# add_executable(obstacle_detector src/perception/obstace_detector.cpp)
+# target_link_libraries(obstacle_detector ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY})
 
 # ----------------------------------------
 # Path Recorder (GPS to CSV in ENU coordinates using GeographicLib)
@@ -91,3 +91,12 @@ target_include_directories(hybrid PRIVATE src/control)
 target_compile_features(hybrid PRIVATE cxx_std_11)
 target_link_libraries(hybrid ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY} ${YAML_CPP_LIBRARIES})
 add_dependencies(hybrid ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+# ----------------------------------------
+# LIDAR Cluster Car Detection
+find_package(PCL REQUIRED)
+add_executable(cluster_car_detection src/perception/lidar/cluster_car_detection.cpp)
+target_compile_features(cluster_car_detection PRIVATE cxx_std_11)
+target_link_libraries(cluster_car_detection ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+target_include_directories(cluster_car_detection PRIVATE ${PCL_INCLUDE_DIRS})
+add_dependencies(cluster_car_detection ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
