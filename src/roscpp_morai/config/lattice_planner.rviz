@@ -1,0 +1,219 @@
+Panels:
+  - Class: rviz/Displays
+    Help Height: 78
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /Status1
+        - /Map1
+        - /Path1
+        - /PointCloud21
+      Splitter Ratio: 0.5
+    Tree Height: 569
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Expanded:
+      - /2D Pose Estimate1
+      - /2D Nav Goal1
+    Name: Tool Properties
+    Splitter Ratio: 0.588679
+  - Class: rviz/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: rviz/Time
+    Expanded: []
+    Name: Time
+    SyncMode: 0
+    SyncSource: PointCloud2
+
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 0.1
+      Class: rviz/Grid
+      Color: 160; 160; 164
+      Enabled: true
+      Line Style:
+        Line Width: 0.03
+        Value: Line
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 10
+      Reference Frame: map
+      Value: true
+    - Alpha: 0.7
+      Class: rviz/Map
+      Color Scheme: costmap
+      Draw Behind: false
+      Enabled: true
+      Name: Map (Costmap)
+      Topic: /costmap
+      Unreliable: false
+      Use Timestamp: false
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 0; 255; 0
+      Enabled: true
+      Head Diameter: 0.3
+      Head Length: 0.3
+      Head Width: 0.3
+      Length: 0.3
+      Line Style: Lines
+      Line Width: 0.05
+      Name: Lattice Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0.1
+      Pose Color: 255; 85; 255
+      Pose Style: Arrows
+      Radius: 0.03
+      Shaft Diameter: 0.1
+      Shaft Length: 0.1
+      Topic: /lattice_path
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 0.3
+      Axes Radius: 0.03
+      Class: rviz/Pose
+      Color: 255; 0; 0
+      Enabled: true
+      Head Diameter: 0.3
+      Head Length: 0.2
+      Head Radius: 0.1
+      Name: Goal Pose
+      Shaft Diameter: 0.1
+      Shaft Length: 0.2
+      Shape: Arrow
+      Topic: /goal_pose
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: PointCloud2 (LiDAR)
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.05
+      Style: Flat Squares
+      Topic: /points_raw
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Alpha: 0.3
+      Class: rviz/RobotModel
+      Collision Alpha: 1
+      Enabled: false
+      Links:
+        All Links Alpha: 1
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+      Name: Robot Model
+      Robot Description: robot_description
+      TF Prefix: ""
+      Update Interval: 0
+      Value: false
+      Visual Enabled: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Default Light: true
+    Fixed Frame: map
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+      Hide Denominations: false
+      Name: Interact
+      Pay Attention: false
+      Shortcut Key: 'i'
+    - Class: rviz/MoveCamera
+      Name: Move Camera
+    - Class: rviz/Select
+      Name: Select
+    - Class: rviz/FocusCamera
+      Name: Focus Camera
+    - Class: rviz/Measure
+      Name: Measure
+    - Class: rviz/SetInitialPose
+      Default Theta: 0
+      Shortcut Key: 's'
+    - Class: rviz/SetGoal
+      Shortcut Key: 'g'
+    - Class: rviz/PublishPoint
+      Single: true
+      Topic: /clicked_point
+  Value: true
+  Views:
+    Current:
+      Class: rviz/XYOrbit
+      Distance: 30
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.06
+        Stereo Focal Distance: 0
+        Swap Stereo Eyes: false
+        Value: false
+      Field of View: 0.785398
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+      Focal Shape Fixed: true
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.01
+      Pitch: 1.5708
+      Target Frame: base_link
+      Value: XYOrbit (rviz)
+      Yaw: 0
+    Saved Views: {}
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 1376
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd00000004000000000000016a000004cafc020000000bfb0000001200530065006c0065006300740069006f006e00000000640000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f0070006500720074006900650073010000010a000001a60000006800fffffffb0000000a00560069006500770073010000025b000001e60000010400fffffffb0000001200540069006d00650020002d00200050006100600065006c00000002a50000019e0000000000fffffffb0000000c00440069007300700061007900730100000640000002f30000010400fffffffb0000002000730065006c0065006300740069006f006e0020007000610067006500000001320000009b0000000000fffffffb0000002000450064006900740020002000560069006500770073010000064a000001800000000000fffffffb0000000e0054006900200050006100670065000000028a000000ab0000000000fffffffb0000000c00490074006500720020003100000002c5000000a20000000000fffffffb0000000c00490074006500720020003200000002f5000000a20000000000fffffffb0000000c00490074006500720020003300000003250000008f0000000000ffffff000000640000
+  Displays:
+    collapsed: false
+  Selection:
+    collapsed: false
+  Time:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: false
+  Width: 1680
+  X: 0
+  Y: 0

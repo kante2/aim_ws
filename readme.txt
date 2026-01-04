@@ -15,7 +15,7 @@ rosrun roscpp_morai hybrid
 source devel/setup.bash && rosrun roscpp_morai path_recorder
 
 
-5. aabb + costmap 
+5. aabb (not good * have to fix using cluster_car_detection ) + costmap 
 source /root/aim_ws/devel/setup.bash
 roslaunch roscpp_morai launch_aabb_costmap_node.launch
 
@@ -23,9 +23,7 @@ source /root/aim_ws/devel/setup.bash
 rosrun roscpp_morai lidar_aabb_ver2
 
 
-
-
-6.
+6. AABB GOOD 
 source /root/aim_ws/devel/setup.bash
 rosrun roscpp_morai cluster_car_detection
 

@@ -118,3 +118,10 @@ target_compile_features(lidar_aabb_ver2 PRIVATE cxx_std_11)
 target_link_libraries(lidar_aabb_ver2 ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_include_directories(lidar_aabb_ver2 PRIVATE ${PCL_INCLUDE_DIRS})
 add_dependencies(lidar_aabb_ver2 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+# ----------------------------------------
+# Lattice Planner with Costmap
+add_executable(lattice_planner_with_costmap_node src/decision/lattice_planner_with_costmap.cpp)
+target_compile_features(lattice_planner_with_costmap_node PRIVATE cxx_std_11)
+target_link_libraries(lattice_planner_with_costmap_node ${catkin_LIBRARIES})
+add_dependencies(lattice_planner_with_costmap_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
