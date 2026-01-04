@@ -1,21 +1,61 @@
 1.
 roscore
 
-2.
+2. bridge
 source devel/setup.bash
 roslaunch rosbridge_server rosbridge_websocket.launch address:=127.0.0.1 port:=9090
 
-3.
+3. gps follow
 source devel/setup.bash
 source /root/aim_ws/devel/setup.bash
 rosrun roscpp_morai hybrid
 
+-------------------------------------------
+
+
+# 1. 코드 수정 (방법 1, 2, 3 중 선택)
+# 방법 1: 가장 쉬움 (RViz에서만 조정)
+# 방법 2: 약간 더 안전
+# 방법 3: 가장 명확함 (추천!)
+
+# 2. 빌드
+cd /root/aim_ws && catkin_make
+
+# 3. 환경 설정
+source devel/setup.bash
+
+# 4. 실행
+rosrun roscpp_morai lidar_aabb_ver2          # 터미널 1
+rosrun roscpp_morai only_lattice_planner_node_ver2  # 터미널 2
+rviz                                         # 터미널 3
+
+-------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+4. lattice_planner_morai
+source /root/aim_ws/devel/setup.bash
+rosrun roscpp_morai only_lattice_planner_node_ver2
+
+
+
+
+------------------------------------------------------------------------------------
 
 4. path Recorder
 source devel/setup.bash && rosrun roscpp_morai path_recorder
 
 
-5. aabb (not good * have to fix using cluster_car_detection ) + costmap 
+5. aabb (not good * have to fix using cluster_car_detection ** WON) + costmap 
 source /root/aim_ws/devel/setup.bash
 roslaunch roscpp_morai launch_aabb_costmap_node.launch
 
@@ -23,9 +63,28 @@ source /root/aim_ws/devel/setup.bash
 rosrun roscpp_morai lidar_aabb_ver2
 
 
-6. AABB GOOD 
+6. AABB GOOD ** cost map fixed final?
+# 1. Source the environment
 source /root/aim_ws/devel/setup.bash
-rosrun roscpp_morai cluster_car_detection
+
+# 2. Run the node
+rosrun roscpp_morai lidar_aabb_ver2
+
+
+
+
+
+7.
+# 빌드
+cd /root/aim_ws && catkin_make
+
+# 실행
+rosrun roscpp_morai only_lattice_planner_node
+
+# RViz 시각화
+rviz
+  → Add Path: /local_path (파란색)
+  → Add Marker: /candidate_paths (녹색/빨강)
 
 
 
@@ -34,6 +93,9 @@ rosrun roscpp_morai cluster_car_detection
 
 source devel/setup.bash
 roslaunch lattice_planner_morai lidar_costmap_generator.launch
+
+source devel/setup.bash
+rosrun roscpp_mo
 
 
 ===================================

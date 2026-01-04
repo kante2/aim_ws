@@ -1,3 +1,8 @@
+// lidar_aabb_costmap_node.cpp (modified: TF 안정화 + frame/stamp 강제 통일)
+// - PointCloud를 costmap_frame(기본 base_link)로 변환(필수)
+// - costmap / marker / debug cloud 모두 frame_id를 costmap_frame으로 강제
+// - TF lookup은 시뮬에서 extrapolation 줄이려고 ros::Time(0) (latest) 사용
+
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <nav_msgs/OccupancyGrid.h>
@@ -25,8 +30,10 @@
 #include <limits>
 #include <cmath>
 #include <algorithm>
+#include <memory>
 
 // TF2
+#include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <geometry_msgs/TransformStamped.h>
@@ -56,9 +63,9 @@ std::unique_ptr<tf2_ros::TransformListener> tfListenerPtr;
 string lidar_topic = "/lidar3D";
 string costmap_topic = "/costmap_from_lidar";
 
-bool use_tf = false;                 // TF로 cloud를 costmap_frame으로 변환할지
-bool require_tf = false;             // TF 실패하면 프레임 스킵할지
-string costmap_frame = "lidar_link"; // costmap/marker publish frame
+bool use_tf = true;                 // TF로 cloud를 costmap_frame으로 변환할지
+bool require_tf = true;             // TF 실패하면 프레임 스킵할지
+string costmap_frame = "base_link"; // costmap/marker publish frame
 
 // costmap params
 float map_resolution = 0.05f;  // 5cm
@@ -71,8 +78,8 @@ int8_t obstacle_cost = 100;    // occupied
 float inflation_m = 0.0f;      // AABB를 주변으로 더 두껍게 (m)
 
 // lidar prefilter
-float min_height = -0.5f;
-float max_height = 0.5f;
+float min_height = -3.0f;
+float max_height = 5.0f;
 float lidar_range = 25.0f;
 float voxel_leaf = 0.10f;
 
@@ -119,6 +126,15 @@ struct Detection {
   int num_points = 0;
   float range = 0.0f;
 };
+
+// ------------------------------
+// Helpers: frame normalize
+// ------------------------------
+static inline std::string normalizeFrame(std::string f) {
+  // ROS tf에서 leading '/' 때문에 lookup 실패하는 경우 방지
+  while (!f.empty() && f.front() == '/') f.erase(f.begin());
+  return f;
+}
 
 // ------------------------------
 // Helpers: costmap indexing
@@ -180,7 +196,6 @@ static void paintAABB(nav_msgs::OccupancyGrid &cm,
 
   int gx0, gy0, gx1, gy1;
   if (!worldToGrid(cm, min_x, min_y, gx0, gy0)) {
-    // clamp를 위해 일단 계산만
     gx0 = (int)std::floor((min_x - cm.info.origin.position.x) / cm.info.resolution);
     gy0 = (int)std::floor((min_y - cm.info.origin.position.y) / cm.info.resolution);
   }
@@ -202,7 +217,6 @@ static void paintAABB(nav_msgs::OccupancyGrid &cm,
     for (int x = gx0; x <= gx1; ++x) {
       int idx = y * w + x;
       if (idx >= 0 && idx < (int)cm.data.size()) {
-        // 최대값으로 덮기 (이미 장애물이면 유지)
         cm.data[idx] = std::max(cm.data[idx], value);
       }
     }
@@ -263,26 +277,41 @@ static pcl::PointCloud<pcl::PointXYZI>::Ptr ransacRemoveGround(
   float dist_thresh, float eps_angle_deg, int max_iter,
   pcl::ModelCoefficients::Ptr coeff_out = nullptr)
 {
-  // 간단한 높이 기반 필터링: z > 0.1m만 유지 (지면 제거)
-  // RANSAC 세그멘테이션 불안정성 제거
   pcl::PointCloud<pcl::PointXYZI>::Ptr out(new pcl::PointCloud<pcl::PointXYZI>);
-  out->reserve(cloud->size());
-  
-  float ground_threshold = 0.05f;  // 지면 높이: 5cm 이상만 유지
-  for (const auto &p : cloud->points) {
-    if (p.z > ground_threshold) {
-      out->push_back(p);
-    }
+
+  if (!cloud || cloud->empty()) {
+    return out;
   }
-  
-  out->width = (uint32_t)out->size();
-  out->height = 1;
-  
-  if (out->empty()) {
-    // 높이 필터 실패 시 원본 반환
-    return pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>(*cloud));
+
+  pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+  pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+
+  pcl::SACSegmentation<pcl::PointXYZI> seg;
+  seg.setOptimizeCoefficients(true);
+  seg.setModelType(pcl::SACMODEL_PERPENDICULAR_PLANE);
+  seg.setMethodType(pcl::SAC_RANSAC);
+  seg.setDistanceThreshold(dist_thresh);
+  seg.setAxis(Eigen::Vector3f(0.0f, 0.0f, 1.0f));  // z축에 수직(=지면)
+  seg.setEpsAngle(static_cast<float>(eps_angle_deg * M_PI / 180.0));
+  seg.setMaxIterations(max_iter);
+  seg.setInputCloud(cloud);
+  seg.segment(*inliers, *coefficients);
+
+  if (coeff_out) {
+    *coeff_out = *coefficients;
   }
-  
+
+  if (inliers->indices.empty()) {
+    *out = *cloud;
+    return out;
+  }
+
+  pcl::ExtractIndices<pcl::PointXYZI> extract;
+  extract.setInputCloud(cloud);
+  extract.setIndices(inliers);
+  extract.setNegative(true);   // outlier(비지면)만 남김
+  extract.filter(*out);
+
   return out;
 }
 
@@ -427,37 +456,65 @@ void lidarCallback(const sensor_msgs::PointCloud2ConstPtr &in_msg)
 {
   if (!ros::ok()) return;
 
-  // 1) TF transform to costmap_frame (optional)
+  const std::string target_frame = normalizeFrame(costmap_frame);
+  const std::string src_frame_raw = in_msg->header.frame_id;
+  const std::string source_frame = normalizeFrame(src_frame_raw);
+
+  // 1) TF transform to costmap_frame
   sensor_msgs::PointCloud2 cloud_tf;
   std_msgs::Header hdr = in_msg->header;
+  hdr.frame_id = source_frame; // normalize
 
-  if (use_tf && hdr.frame_id != costmap_frame) {
+  bool in_target_frame = (hdr.frame_id == target_frame);
+
+  if (use_tf && !in_target_frame) {
     try {
+      // 시뮬에서 stamp 기반 extrapolation이 자주 나서 latest(0) 사용
       geometry_msgs::TransformStamped tf =
-        tfBufferPtr->lookupTransform(costmap_frame, hdr.frame_id, hdr.stamp, ros::Duration(0.05));
+        tfBufferPtr->lookupTransform(target_frame, hdr.frame_id, ros::Time(0), ros::Duration(0.05));
 
       tf2::doTransform(*in_msg, cloud_tf, tf);
-      hdr = cloud_tf.header;           // frame_id = costmap_frame
+
+      // header 강제 통일
+      hdr = cloud_tf.header;
+      hdr.frame_id = target_frame;
+      hdr.stamp = in_msg->header.stamp;
+
+      cloud_tf.header = hdr;
+      in_target_frame = true;
     } catch (const std::exception &e) {
       ROS_WARN_THROTTLE(1.0, "TF failed (%s -> %s): %s",
-                        hdr.frame_id.c_str(), costmap_frame.c_str(), e.what());
+                        hdr.frame_id.c_str(), target_frame.c_str(), e.what());
       if (require_tf) return;
-      cloud_tf = *in_msg; // fallback: 그대로 처리
+
+      // fallback(비추천): frame 그대로 처리
+      cloud_tf = *in_msg;
+      hdr = cloud_tf.header;
+      hdr.frame_id = normalizeFrame(hdr.frame_id);
+      cloud_tf.header = hdr;
+      in_target_frame = (hdr.frame_id == target_frame);
     }
   } else {
     cloud_tf = *in_msg;
+    hdr = cloud_tf.header;
+    hdr.frame_id = normalizeFrame(hdr.frame_id);
+    hdr.stamp = in_msg->header.stamp;
+    cloud_tf.header = hdr;
+    in_target_frame = (hdr.frame_id == target_frame);
   }
+
+  // 아래 publish들은 “base_link 기준”을 목표로 함.
+  // require_tf=true면 항상 in_target_frame=true라서 안전.
+  if (use_tf && require_tf && !in_target_frame) return;
 
   // 2) ROS -> PCL
   pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
   pcl::fromROSMsg(cloud_tf, *cloud);
-
   if (cloud->empty()) return;
 
   // 3) filters
   filterByHeight(cloud, min_height, max_height);
   filterByRange(cloud, lidar_range);
-
   if (cloud->empty()) return;
 
   voxelDownsample(cloud, voxel_leaf);
@@ -470,12 +527,13 @@ void lidarCallback(const sensor_msgs::PointCloud2ConstPtr &in_msg)
   pcl::PointCloud<pcl::PointXYZI>::Ptr ransac_cloud =
     ransacRemoveGround(roi_cloud, ransac_dist_thresh, ransac_eps_angle_deg, ransac_max_iter);
 
-  // publish ransac cloud (debug)
+  // debug publish: ransac cloud (frame/stamp 통일)
   {
     sensor_msgs::PointCloud2 out;
     pcl::toROSMsg(*ransac_cloud, out);
     out.header = hdr;
-    if (!out.header.frame_id.empty() && use_tf) out.header.frame_id = hdr.frame_id;
+    out.header.frame_id = target_frame;
+    out.header.stamp = in_msg->header.stamp;
     pub_ransac.publish(out);
   }
 
@@ -486,14 +544,20 @@ void lidarCallback(const sensor_msgs::PointCloud2ConstPtr &in_msg)
     euclideanCluster(ransac_cloud, cluster_tolerance, cluster_min_size, cluster_max_size);
 
   // publish all colored clusters
-  publishColoredClustersAll(ransac_cloud, clusters, hdr);
+  {
+    std_msgs::Header chdr = hdr;
+    chdr.frame_id = target_frame;
+    chdr.stamp = in_msg->header.stamp;
+    publishColoredClustersAll(ransac_cloud, clusters, chdr);
+  }
 
   // 7) detections
   std::vector<Detection> dets = buildDetections(ransac_cloud, clusters, hdr.stamp);
 
-  // messages to publish
+  // messages to publish (frame/stamp 통일)
   geometry_msgs::PoseArray centers_msg;
-  centers_msg.header = hdr;
+  centers_msg.header.frame_id = target_frame;
+  centers_msg.header.stamp = in_msg->header.stamp;
 
   visualization_msgs::MarkerArray boxes_msg;
   visualization_msgs::MarkerArray center_spheres_msg;
@@ -505,9 +569,9 @@ void lidarCallback(const sensor_msgs::PointCloud2ConstPtr &in_msg)
 
   // 8) init costmap (local around origin)
   nav_msgs::OccupancyGrid costmap;
-  // costmap frame을 param으로 강제하고 싶으면 hdr.frame_id를 costmap_frame으로 덮어도 됨
-  // 여기서는 hdr.frame_id를 그대로 사용(= TF 변환됐으면 costmap_frame, 아니면 원본 frame)
-  initCostmap(costmap, hdr);
+  initCostmap(costmap, centers_msg.header);
+  costmap.header.frame_id = target_frame;              // 강제
+  costmap.header.stamp = in_msg->header.stamp;         // 강제
 
   // 원점 주변 free (옵션)
   {
@@ -537,7 +601,8 @@ void lidarCallback(const sensor_msgs::PointCloud2ConstPtr &in_msg)
 
     // AABB box marker (green)
     visualization_msgs::Marker box;
-    box.header = hdr;
+    box.header.frame_id = target_frame;
+    box.header.stamp = in_msg->header.stamp;
     box.ns = "cav_aabb";
     box.id = cav_id;
     box.type = visualization_msgs::Marker::CUBE;
@@ -553,7 +618,8 @@ void lidarCallback(const sensor_msgs::PointCloud2ConstPtr &in_msg)
 
     // center sphere marker (yellow)
     visualization_msgs::Marker sph;
-    sph.header = hdr;
+    sph.header.frame_id = target_frame;
+    sph.header.stamp = in_msg->header.stamp;
     sph.ns = "cav_center_sphere";
     sph.id = cav_id;
     sph.type = visualization_msgs::Marker::SPHERE;
@@ -580,25 +646,23 @@ void lidarCallback(const sensor_msgs::PointCloud2ConstPtr &in_msg)
     }
 
     // ---- paint costmap with AABB (XY only) ----
-    // marker는 중심/스케일 기반이므로, costmap에는 min/max로 채우면 됨
     float min_x = d.min_pt.x();
     float min_y = d.min_pt.y();
     float max_x = d.max_pt.x();
     float max_y = d.max_pt.y();
-
-    // “초록 박스 영역을 costmap에 그대로” → green cost를 사용
     paintAABB(costmap, min_x, min_y, max_x, max_y, cav_cost_green, inflation_m);
 
     cav_id++;
   }
 
-  // publish cav cloud
+  // publish cav cloud (frame/stamp 통일)
   cav_colored->width = (uint32_t)cav_colored->points.size();
   cav_colored->height = 1;
   {
     sensor_msgs::PointCloud2 cav_msg;
     pcl::toROSMsg(*cav_colored, cav_msg);
-    cav_msg.header = hdr;
+    cav_msg.header.frame_id = target_frame;
+    cav_msg.header.stamp = in_msg->header.stamp;
     pub_cluster_cav.publish(cav_msg);
   }
 
@@ -668,8 +732,11 @@ int main(int argc, char **argv)
   pnh.param("marker_lifetime", marker_lifetime, marker_lifetime);
   pnh.param("center_sphere_diam", center_sphere_diam, center_sphere_diam);
 
-  // TF init
-  tfBufferPtr.reset(new tf2_ros::Buffer());
+  // normalize costmap_frame once
+  costmap_frame = normalizeFrame(costmap_frame);
+
+  // TF init (cache time 늘려서 시뮬에서 lookup 여유)
+  tfBufferPtr.reset(new tf2_ros::Buffer(ros::Duration(10.0)));
   tfListenerPtr.reset(new tf2_ros::TransformListener(*tfBufferPtr));
 
   // publishers
@@ -688,7 +755,10 @@ int main(int argc, char **argv)
   ROS_INFO("lidar_aabb_costmap_node started");
   ROS_INFO(" - lidar_topic: %s", lidar_topic.c_str());
   ROS_INFO(" - costmap_topic: %s", costmap_topic.c_str());
-  ROS_INFO(" - use_tf: %s, costmap_frame: %s", use_tf ? "true":"false", costmap_frame.c_str());
+  ROS_INFO(" - use_tf: %s, require_tf: %s, costmap_frame: %s",
+           use_tf ? "true":"false",
+           require_tf ? "true":"false",
+           costmap_frame.c_str());
   ROS_INFO(" - map: %.1fm x %.1fm, res=%.2fm", map_width, map_height, map_resolution);
   ROS_INFO(" - height: [%.2f, %.2f], range=%.1f, voxel=%.2f", min_height, max_height, lidar_range, voxel_leaf);
   ROS_INFO(" - cluster tol=%.2f, min=%d, max=%d", cluster_tolerance, cluster_min_size, cluster_max_size);

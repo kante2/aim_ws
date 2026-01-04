@@ -1,0 +1,2 @@
+<node pkg="tf2_ros" type="static_transform_publisher" name="base_to_lidar"
+      args="0.30 0.00 0.20 0 0 0 base_link lidar_link" />

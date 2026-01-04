@@ -113,15 +113,22 @@ add_dependencies(lidar_aabb_costmap_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${c
 
 # ----------------------------------------
 # LIDAR AABB Costmap Node Ver2 (alternative version)
-add_executable(lidar_aabb_ver2 src/perception/lidar/lidar_aabb_ver2.cpp)
+add_executable(lidar_aabb_ver2 src/perception/lidar/lidar_aabb_costmap_node_ver2.cpp)
 target_compile_features(lidar_aabb_ver2 PRIVATE cxx_std_11)
 target_link_libraries(lidar_aabb_ver2 ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_include_directories(lidar_aabb_ver2 PRIVATE ${PCL_INCLUDE_DIRS})
 add_dependencies(lidar_aabb_ver2 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+# # ----------------------------------------
+# # Lattice Planner with Costmap
+# add_executable(lattice_planner_with_costmap_node src/decision/lattice_planner_with_costmap.cpp)
+# target_compile_features(lattice_planner_with_costmap_node PRIVATE cxx_std_11)
+# target_link_libraries(lattice_planner_with_costmap_node ${catkin_LIBRARIES})
+# add_dependencies(lattice_planner_with_costmap_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 # ----------------------------------------
-# Lattice Planner with Costmap
-add_executable(lattice_planner_with_costmap_node src/decision/lattice_planner_with_costmap.cpp)
-target_compile_features(lattice_planner_with_costmap_node PRIVATE cxx_std_11)
-target_link_libraries(lattice_planner_with_costmap_node ${catkin_LIBRARIES})
-add_dependencies(lattice_planner_with_costmap_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# Only Lattice Planner Node Ver2 (improved version)
+add_executable(only_lattice_planner_node_ver2 src/decision/only_lattice_planner_node_ver2.cpp)
+target_include_directories(only_lattice_planner_node_ver2 PRIVATE src/control)
+target_compile_features(only_lattice_planner_node_ver2 PRIVATE cxx_std_11)
+target_link_libraries(only_lattice_planner_node_ver2 ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY} yaml-cpp)
+add_dependencies(only_lattice_planner_node_ver2 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
