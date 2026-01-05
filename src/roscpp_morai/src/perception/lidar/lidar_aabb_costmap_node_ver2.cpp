@@ -684,6 +684,8 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
 
+  // load param function
+  // loadParams();
   // load params
   pnh.param("lidar_topic", lidar_topic, lidar_topic);
   pnh.param("costmap_topic", costmap_topic, costmap_topic);

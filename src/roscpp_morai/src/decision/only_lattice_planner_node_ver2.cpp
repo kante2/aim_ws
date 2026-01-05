@@ -994,9 +994,9 @@ void controlLoop(const ros::TimerEvent&) {
         visualization_msgs::MarkerArray best_path_markers = visualizeBestPath(best_path);
         candidate_paths_pub.publish(best_path_markers);  // 같은 토픽에 publish
         
-        ROS_INFO("✅ Published blue path with %zu points", best_path.points.size());
+        ROS_INFO("Published blue path with %zu points", best_path.points.size());
     } else {
-        ROS_WARN("❌ No valid candidate path found!");
+        ROS_WARN("No valid candidate path found!");
     }
     
     // 6. 모든 후보 경로 시각화

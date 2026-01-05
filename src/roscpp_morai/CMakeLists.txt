@@ -149,3 +149,12 @@ target_include_directories(only_lattice_planner_node_ver2 PRIVATE src/control)
 target_compile_features(only_lattice_planner_node_ver2 PRIVATE cxx_std_11)
 target_link_libraries(only_lattice_planner_node_ver2 ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY} yaml-cpp)
 add_dependencies(only_lattice_planner_node_ver2 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+
+# ----------------------------------------
+# gps_gamming_perception
+add_executable(gps_gamming_perception src/perception/gps/gps_gamming_perception.cpp src/control/hybrid_function.cpp)
+target_include_directories(gps_gamming_perception PRIVATE src/control)
+target_compile_features(gps_gamming_perception PRIVATE cxx_std_11)
+target_link_libraries(gps_gamming_perception ${catkin_LIBRARIES} ${GEOGRAPHIC_LIBRARY} yaml-cpp)
+add_dependencies(gps_gamming_perception ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

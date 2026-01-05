@@ -51,4 +51,21 @@ static void paintAABB(nav_msgs::OccupancyGrid &cm,
   }
 }
 
+// print AABB
+void printLidarAABB_statistics(const LidarAabbParams& g_params) {
+    ROS_INFO("lidar_aabb_costmap_node started");
+    ROS_INFO(" - lidar_topic: %s", g_params.lidar_topic.c_str());
+    ROS_INFO(" - costmap_topic: %s", g_params.costmap_topic.c_str());
+    ROS_INFO(" - use_tf: %s, require_tf: %s, costmap_frame: %s",
+            g_params.use_tf ? "true":"false",
+            g_params.require_tf ? "true":"false",
+            g_params.costmap_frame.c_str());
+    ROS_INFO(" - map: %.1fm x %.1fm, res=%.2fm", g_params.map_width, g_params.map_height, g_params.map_resolution);
+    ROS_INFO(" - height: [%.2f, %.2f], range=%.1f, voxel=%.2f", g_params.min_height, g_params.max_height, g_params.lidar_range, g_params.voxel_leaf);
+    ROS_INFO(" - cluster tol=%.2f, min=%d, max=%d", g_params.cluster_tolerance, g_params.cluster_min_size, g_params.cluster_max_size);
+    ROS_INFO(" - cav dims dx[%.2f,%.2f], dy[%.2f,%.2f], dz[%.2f,%.2f], min_pts=%d",
+            g_params.cav_dx_min,g_params.cav_dx_max,g_params.cav_dy_min,g_params.cav_dy_max,g_params.cav_dz_min,g_params.cav_dz_max,g_params.cav_min_points);
+
+}
+
 #endif // LIDAR_AABB_VISUALIZE_HPP
