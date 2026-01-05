@@ -2,9 +2,10 @@
 # 속도
 # ===============================================
 
-target_vel: 50.0
+target_vel: 60.0
 curve_vel: 40.0
-curve_standard: 0.0045
+# curve_standard: 0.0045
+curve_standard: 0.1
 lookahead_idx: 50
 # ===============================================
 # gain
@@ -24,7 +25,8 @@ Kd: 0
 # ===============================================
 
 # 경로 파일 이름 (recorded path)
-path_file_name: "/root/aim_ws/src/roscpp_morai/config/track_log_recorded.csv"
+# path_file_name: "/root/aim_ws/src/roscpp_morai/config/track_log_recorded.csv"
+path_file_name: "/root/aim_ws/src/roscpp_morai/config/track_log_recorded_right.csv"
 
 # 기준점 파일 이름
 ref_file_name: "/root/aim_ws/src/roscpp_morai/config/ref.txt"

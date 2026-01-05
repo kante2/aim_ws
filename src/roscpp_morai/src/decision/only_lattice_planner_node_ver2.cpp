@@ -50,7 +50,8 @@ double Kp, Ki, Kd;
 double LD = 5.0;  // Look Ahead Distance
 double LATERAL_OFFSET_STEP = 0.5;  // Lateral offset 간격
 double NUM_OFFSETS = 9;  // 샘플링 경로 개수
-double SAMPLE_SPACING = 0.2;  // 경로 샘플링 간격
+// double SAMPLE_SPACING = 0.2;  // 경로 샘플링 간격 **
+double SAMPLE_SPACING = 0.5;  // 경로 샘플링 간격
 
 // OccupancyGrid 표준(0~100) 스타일에 맞춤: -1(unknown), 0(free), 75/100(장애물)
 // lethal은 100(occupied)로 취급
@@ -769,11 +770,11 @@ vector<CandidatePath> generateAndEvaluateCandidates(
             // 이전 offset과의 변화 페널티 (히스테리시스)
             double offset_change_cost = fabs(offset - last_selected_offset) * 0.3;
             
-            // 총 비용
-            candidate.cost = candidate.obstacle_cost * 100.0 + 
-                           candidate.offset_cost + 
-                           candidate.curvature_cost * 10.0 +
-                           offset_change_cost;
+            // 총 비용 &&
+            candidate.cost = candidate.obstacle_cost * 100.0 + // 장애물 비용
+                           candidate.offset_cost + // 중앙 유지 페널티
+                           candidate.curvature_cost * 10.0 + // 곡률 페널티
+                           offset_change_cost;// offset 변화 페널티
             
             candidates.push_back(candidate);
         }

@@ -27,8 +27,11 @@ source devel/setup.bash
 # 4. 실행
 rosrun roscpp_morai lidar_aabb_ver2          # 터미널 1
 rosrun roscpp_morai only_lattice_planner_node_ver2  # 터미널 2
-rviz                                         # 터미널 3
+rviz             
 
+# 5.
+source devel/setup.bash
+rosrun roscpp_morai lidar_aabb_costmap_node_ver3
 -------------------------------------------
 
 
