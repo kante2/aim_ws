@@ -1,0 +1,2 @@
+duration elapsed
+string state
