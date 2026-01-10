@@ -51,6 +51,42 @@ typedef float float32;
 typedef double float64;
 typedef char char8;
 
+// ========================================
+// Detection 구조체 (3D AABB)
+// ========================================
+struct Detection {
+  int id{0};
+  Eigen::Vector3f min_pt{0,0,0};
+  Eigen::Vector3f max_pt{0,0,0};
+  Eigen::Vector3f centroid{0,0,0};
+};
+
+// ========================================
+// Costmap 파라미터
+// ========================================
+struct CostmapParams {
+  float resolution = 0.05f;
+  float width = 50.0f;
+  float height = 50.0f;
+  int8_t unknown_cost = -1;
+  int8_t free_cost = 0;
+  int8_t obstacle_cost = 100;
+  float inflation_radius = 0.0f;
+};
+
+// ========================================
+// 런타임 상태 (프레임마다 갱신)
+// ========================================
+struct CostmapState {
+  bool tf_ok{false};
+  sensor_msgs::PointCloud2 baselink_cloud;
+  std::vector<Detection> detections;
+  nav_msgs::OccupancyGrid costmap;
+};
+
+// =========================================
+// convex hull
+// =========================================
 struct Point2D 
 {
     double x;
@@ -92,11 +128,30 @@ struct LidarParam
     int euclidean_min_size = 5;
     int euclidean_max_size = 2000; // 너무 작은 덩어리(노이즈) 제거 / 너무 큰 덩어리(벽/지형) 제거
 
+    //
+
+};
+
+// Lshapefitting 사용 struct
+struct LidarCluster
+{
+    pcl::PointCloud<pcl::PointXYZI> pcl_cluster_point; // 포인트 클라우드를 담은 클러스터 1개
+
+    double theta = 0.0; // 최적 angle
+    
+    double rotate_rect_min_x = 0.0; // 직사각형을 축정렬했을 때 나오는 꼭짓점
+    double rotate_rect_max_x = 0.0;
+    double rotate_rect_min_y = 0.0;
+    double rotate_rect_max_y = 0.0;
+
+    // Point2D corner[4]; // 이건 왜 필요?
+
 };
 
 struct Lidar
 {
     LidarParam st_LidarParam;
+    LidarCluster st_LidarCluster;
     
     // PointCloud2
     sensor_msgs::PointCloud2::Ptr input_cloud_msg;
@@ -105,6 +160,12 @@ struct Lidar
     // PCL PointCloud
     pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_input_cloud;
     pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_output_cloud; // 최종 출력 클라우드
+
+    // ========================
+    // vector 객체 정보
+    // ========================
+
+    vector<LidarCluster> vec_cluster; // 포인트 클라우드 클러스터 묶음
 
     // ========================
     // 중간 처리 단계별 PointCloud
@@ -117,7 +178,7 @@ struct Lidar
     pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_voxel_cloud;
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_ransac_cloud;
-    // pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_euclidean_cloud;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_euclidean_cloud;
 
     
     // Constructor
